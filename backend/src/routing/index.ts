@@ -1,11 +1,15 @@
-import { Router } from 'express';
-import buttonRoutes from '../modules/core/button/button.routes';
+import { Router } from "express";
+import buttonRoutes from "../modules/core/button/button.routes";
+import authRoutes from "../modules/users/auth/auth.routes";
+import projectRoutes from "../modules/users/project/project.routes";
 
 const router = Router();
 
-// Core module routes. Mounted under /api in app.ts, so the full path is
-// /api/core/components. Additional core components (dialog, card, ...) will
-// register their own router here the same way button does.
-router.use('/core/components', buttonRoutes);
+// Core components API: /api/core/components
+router.use("/core/components", buttonRoutes);
+
+// Users API: /api/users/auth, /api/users/project
+router.use("/users/auth", authRoutes);
+router.use("/users/project", projectRoutes);
 
 export default router;
