@@ -1,24 +1,32 @@
-import { pool } from '../../../shared/utils/db';
+import { pool } from "../../../shared/utils/db";
 import {
   SaveProjectInput,
   ProjectResponse,
-} from '../../../shared/types/user.types';
-import { generateProjectZip } from './exportGenerator';
+} from "../../../shared/types/user.types";
+import { generateProjectZip } from "./exportGenerator";
 
-export async function getOrCreateUserProject(userId: number): Promise<ProjectResponse> {
+export async function getOrCreateUserProject(
+  userId: number,
+  projectId?: number,
+): Promise<ProjectResponse> {
   const client = await pool.connect();
   try {
-    let projectRes = await client.query(
-      `SELECT id, name, description FROM users.project WHERE user_id = $1 ORDER BY id ASC LIMIT 1`,
-      [userId]
-    );
+    let projectRes = projectId
+      ? await client.query(
+          `SELECT id, name, description FROM users.project WHERE id = $1 AND user_id = $2`,
+          [projectId, userId],
+        )
+      : await client.query(
+          `SELECT id, name, description FROM users.project WHERE user_id = $1 ORDER BY updated_at DESC, id DESC LIMIT 1`,
+          [userId],
+        );
 
     if (projectRes.rows.length === 0) {
       projectRes = await client.query(
         `INSERT INTO users.project (user_id, name, description)
          VALUES ($1, 'My Awesome Website', 'Built with UI Builder Platform')
          RETURNING id, name, description`,
-        [userId]
+        [userId],
       );
 
       const newProjectId = projectRes.rows[0].id;
@@ -26,18 +34,18 @@ export async function getOrCreateUserProject(userId: number): Promise<ProjectRes
         `INSERT INTO users.page (project_id, name, path)
          VALUES ($1, 'Home', '/')
          RETURNING id`,
-        [newProjectId]
+        [newProjectId],
       );
 
       return {
         id: newProjectId,
-        name: 'My Awesome Website',
-        description: 'Built with UI Builder Platform',
+        name: "My Awesome Website",
+        description: "Built with UI Builder Platform",
         pages: [
           {
             id: pageRes.rows[0].id,
-            name: 'Home',
-            path: '/',
+            name: "Home",
+            path: "/",
             components: [],
           },
         ],
@@ -48,7 +56,7 @@ export async function getOrCreateUserProject(userId: number): Promise<ProjectRes
 
     const pagesRes = await client.query(
       `SELECT id, name, path FROM users.page WHERE project_id = $1 ORDER BY id ASC`,
-      [project.id]
+      [project.id],
     );
 
     const pages = [];
@@ -58,7 +66,7 @@ export async function getOrCreateUserProject(userId: number): Promise<ProjectRes
          FROM users.component_instance
          WHERE page_id = $1
          ORDER BY order_index ASC, id ASC`,
-        [page.id]
+        [page.id],
       );
 
       pages.push({
@@ -91,36 +99,52 @@ export async function getOrCreateUserProject(userId: number): Promise<ProjectRes
 
 export async function saveUserProject(
   userId: number,
-  input: SaveProjectInput
+  input: SaveProjectInput,
 ): Promise<ProjectResponse> {
   const client = await pool.connect();
   try {
-    await client.query('BEGIN');
+    await client.query("BEGIN");
 
     let projectId = input.projectId;
     if (!projectId) {
-      const projRes = await client.query(
-        `INSERT INTO users.project (user_id, name, description)
-         VALUES ($1, $2, $3)
-         RETURNING id`,
-        [userId, input.name, input.description ?? '']
+      const existing = await client.query(
+        `SELECT id FROM users.project WHERE user_id = $1 ORDER BY updated_at DESC, id DESC LIMIT 1`,
+        [userId],
       );
-      projectId = projRes.rows[0].id;
+      if (existing.rows.length > 0) {
+        projectId = existing.rows[0].id;
+        await client.query(
+          `UPDATE users.project SET name = $1, description = $2, updated_at = now()
+           WHERE id = $3 AND user_id = $4`,
+          [input.name, input.description ?? "", projectId, userId],
+        );
+      } else {
+        const projRes = await client.query(
+          `INSERT INTO users.project (user_id, name, description)
+           VALUES ($1, $2, $3)
+           RETURNING id`,
+          [userId, input.name, input.description ?? ""],
+        );
+        projectId = projRes.rows[0].id;
+      }
     } else {
       await client.query(
         `UPDATE users.project SET name = $1, description = $2, updated_at = now()
          WHERE id = $3 AND user_id = $4`,
-        [input.name, input.description ?? '', projectId, userId]
+        [input.name, input.description ?? "", projectId, userId],
       );
     }
 
     const coreComponentsRes = await client.query(
       `SELECT c.id AS comp_id, c.key, v.id AS var_id, v.variant_key
        FROM core.component c
-       LEFT JOIN core.component_variant v ON v.component_id = c.id`
+       LEFT JOIN core.component_variant v ON v.component_id = c.id`,
     );
 
-    const coreLookup = new Map<string, { compId: number; variants: Map<string, number> }>();
+    const coreLookup = new Map<
+      string,
+      { compId: number; variants: Map<string, number> }
+    >();
     for (const row of coreComponentsRes.rows) {
       if (!coreLookup.has(row.key)) {
         coreLookup.set(row.key, { compId: row.comp_id, variants: new Map() });
@@ -130,7 +154,9 @@ export async function saveUserProject(
       }
     }
 
-    await client.query(`DELETE FROM users.page WHERE project_id = $1`, [projectId]);
+    await client.query(`DELETE FROM users.page WHERE project_id = $1`, [
+      projectId,
+    ]);
 
     const savedPages = [];
     for (const pageInput of input.pages) {
@@ -138,7 +164,7 @@ export async function saveUserProject(
         `INSERT INTO users.page (project_id, name, path)
          VALUES ($1, $2, $3)
          RETURNING id, name, path`,
-        [projectId, pageInput.name, pageInput.path]
+        [projectId, pageInput.name, pageInput.path],
       );
       const pageRow = pageRes.rows[0];
 
@@ -147,8 +173,10 @@ export async function saveUserProject(
       for (const compInput of pageInput.components) {
         const coreInfo = coreLookup.get(compInput.componentType);
         const compId = compInput.coreComponentId ?? coreInfo?.compId ?? null;
-        const variantKey = (compInput.props?.variant as string) || 'primary';
-        const varId = compInput.coreVariantId ?? (coreInfo ? coreInfo.variants.get(variantKey) ?? null : null);
+        const variantKey = (compInput.props?.variant as string) || "primary";
+        const varId =
+          compInput.coreVariantId ??
+          (coreInfo ? (coreInfo.variants.get(variantKey) ?? null) : null);
 
         const compRes = await client.query(
           `INSERT INTO users.component_instance
@@ -164,7 +192,7 @@ export async function saveUserProject(
             JSON.stringify(compInput.props || {}),
             JSON.stringify(compInput.position || { x: 0, y: 0 }),
             order++,
-          ]
+          ],
         );
 
         savedComponents.push({
@@ -187,7 +215,7 @@ export async function saveUserProject(
       });
     }
 
-    await client.query('COMMIT');
+    await client.query("COMMIT");
 
     return {
       id: projectId as number,
@@ -196,7 +224,7 @@ export async function saveUserProject(
       pages: savedPages,
     };
   } catch (err) {
-    await client.query('ROLLBACK');
+    await client.query("ROLLBACK");
     throw err;
   } finally {
     client.release();
@@ -205,25 +233,35 @@ export async function saveUserProject(
 
 export async function exportUserProject(
   userId: number,
-  projectId: number
+  projectId?: number,
+  projectData?: SaveProjectInput,
 ): Promise<{ zipBuffer: Buffer; filename: string }> {
-  const project = await getOrCreateUserProject(userId);
+  let project: ProjectResponse;
+  if (projectData) {
+    project = await saveUserProject(userId, projectData);
+  } else {
+    project = await getOrCreateUserProject(userId, projectId);
+  }
+
   const zipBuffer = await generateProjectZip(project);
 
   const manifest = {
     projectName: project.name,
     exportedAt: new Date().toISOString(),
     pagesCount: project.pages.length,
-    componentsCount: project.pages.reduce((acc, p) => acc + p.components.length, 0),
+    componentsCount: project.pages.reduce(
+      (acc, p) => acc + p.components.length,
+      0,
+    ),
   };
 
   await pool.query(
     `INSERT INTO users.project_export (project_id, manifest)
      VALUES ($1, $2)`,
-    [project.id, JSON.stringify(manifest)]
+    [project.id, JSON.stringify(manifest)],
   );
 
-  const cleanName = project.name.toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+  const cleanName = project.name.toLowerCase().replace(/[^a-z0-9_-]/g, "-");
   return {
     zipBuffer,
     filename: `${cleanName}-react-project.zip`,

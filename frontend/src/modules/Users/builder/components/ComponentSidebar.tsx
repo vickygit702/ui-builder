@@ -17,6 +17,8 @@ import { HeaderVariantDef } from "../../../Core/header/header.variants";
 import { SidebarVariantDef } from "../../../Core/sidebar/sidebar.variants";
 import { FooterVariantDef } from "../../../Core/footer/footer.variants";
 import { DialogVariantDef } from "../../../Core/dialog/dialog.variants";
+import { TableVariantDef } from "../../../Core/table/table.variants";
+import { CardVariantDef } from "../../../Core/card/card.variants";
 import {
   DraggedItemPayload,
   CoreComponentType,
@@ -25,6 +27,7 @@ import { ComponentResponse } from "../../../types/component.types";
 import ComponentCategoryAccordion from "./ComponentCategoryAccordion";
 import SidebarDraggableCard from "./SidebarDraggableCard";
 import ComponentSidebarRail from "./ComponentSidebarRail";
+import CardAndTableAccordions from "./CardAndTableAccordions";
 
 interface ComponentSidebarProps {
   components: ComponentResponse[];
@@ -33,6 +36,8 @@ interface ComponentSidebarProps {
   sidebarVariants: SidebarVariantDef[];
   footerVariants: FooterVariantDef[];
   dialogVariants?: DialogVariantDef[];
+  tableVariants?: TableVariantDef[];
+  cardVariants?: CardVariantDef[];
   loading: boolean;
 }
 
@@ -43,25 +48,16 @@ export default function ComponentSidebar({
   sidebarVariants,
   footerVariants,
   dialogVariants = [],
+  tableVariants = [],
+  cardVariants = [],
   loading,
 }: ComponentSidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [tab, setTab] = useState<"all" | "buttons" | "layout">("all");
+  const [cardCountToDrag, setCardCountToDrag] = useState<number>(3);
 
   function handleToggleCollapse() {
     setIsCollapsed((prev) => !prev);
-  }
-
-  function handleSetTabAll() {
-    setTab("all");
-  }
-
-  function handleSetTabButtons() {
-    setTab("buttons");
-  }
-
-  function handleSetTabLayout() {
-    setTab("layout");
   }
 
   function handleDragStart(
@@ -69,6 +65,7 @@ export default function ComponentSidebar({
     componentType: CoreComponentType,
     variantKey: string,
     label: string,
+    extraPayload?: Partial<DraggedItemPayload>,
   ) {
     const compDef = components.find((c) => c.key === componentType);
     const varDef = compDef?.variants.find((v) => v.variantKey === variantKey);
@@ -80,6 +77,7 @@ export default function ComponentSidebar({
       label,
       coreComponentId: compDef?.id,
       coreVariantId: varDef?.id,
+      ...extraPayload,
     };
     e.dataTransfer.setData("application/json", JSON.stringify(payload));
     e.dataTransfer.effectAllowed = "copy";
@@ -117,39 +115,20 @@ export default function ComponentSidebar({
 
         {/* Tab switcher */}
         <div className="flex items-center gap-1 mt-2.5 p-1 bg-slate-100 rounded-lg text-xs">
-          <button
-            type="button"
-            onClick={handleSetTabAll}
-            className={`flex-1 py-1 rounded text-center font-medium transition-colors ${
-              tab === "all"
-                ? "bg-white text-slate-900 shadow-sm"
-                : "text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            All
-          </button>
-          <button
-            type="button"
-            onClick={handleSetTabButtons}
-            className={`flex-1 py-1 rounded text-center font-medium transition-colors ${
-              tab === "buttons"
-                ? "bg-white text-slate-900 shadow-sm"
-                : "text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            Buttons
-          </button>
-          <button
-            type="button"
-            onClick={handleSetTabLayout}
-            className={`flex-1 py-1 rounded text-center font-medium transition-colors ${
-              tab === "layout"
-                ? "bg-white text-slate-900 shadow-sm"
-                : "text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            Layout
-          </button>
+          {(["all", "buttons", "layout"] as const).map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setTab(t)}
+              className={`flex-1 py-1 rounded text-center capitalize font-medium transition-colors ${
+                tab === t
+                  ? "bg-white text-slate-900 shadow-sm"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              {t}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -282,6 +261,16 @@ export default function ComponentSidebar({
                   ))}
                 </ComponentCategoryAccordion>
               )}
+
+            {/* 6 & 7. CARD GRID & DATA TABLES */}
+            <CardAndTableAccordions
+              tab={tab}
+              cardVariants={cardVariants}
+              tableVariants={tableVariants}
+              cardCountToDrag={cardCountToDrag}
+              onSetCardCountToDrag={setCardCountToDrag}
+              onDragStart={handleDragStart}
+            />
           </>
         )}
       </div>

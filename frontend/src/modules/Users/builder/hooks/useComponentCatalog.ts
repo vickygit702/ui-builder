@@ -21,6 +21,14 @@ import {
   DIALOG_VARIANTS,
   DialogVariantDef,
 } from "../../../Core/dialog/dialog.variants";
+import {
+  TABLE_VARIANTS,
+  TableVariantDef,
+} from "../../../Core/table/table.variants";
+import {
+  CARD_VARIANTS,
+  CardVariantDef,
+} from "../../../Core/card/card.variants";
 
 interface UseComponentCatalogResult {
   components: ComponentResponse[];
@@ -29,6 +37,8 @@ interface UseComponentCatalogResult {
   sidebarVariants: SidebarVariantDef[];
   footerVariants: FooterVariantDef[];
   dialogVariants: DialogVariantDef[];
+  tableVariants: TableVariantDef[];
+  cardVariants: CardVariantDef[];
   loading: boolean;
   error: string | null;
   refetch: () => Promise<void>;
@@ -113,6 +123,28 @@ export function useComponentCatalog(): UseComponentCatalogResult {
         }))
       : DIALOG_VARIANTS;
 
+  const tableComp = components.find((c) => c.key === "table");
+  const tableVariants: TableVariantDef[] =
+    tableComp && tableComp.variants.length > 0
+      ? tableComp.variants.map((v) => ({
+          key: v.variantKey,
+          label: v.label,
+          classNames: v.classNames,
+          isDefault: v.isDefault,
+        }))
+      : TABLE_VARIANTS;
+
+  const cardComp = components.find((c) => c.key === "card");
+  const cardVariants: CardVariantDef[] =
+    cardComp && cardComp.variants.length > 0
+      ? cardComp.variants.map((v) => ({
+          key: v.variantKey,
+          label: v.label,
+          classNames: v.classNames,
+          isDefault: v.isDefault,
+        }))
+      : CARD_VARIANTS;
+
   return {
     components,
     buttonVariants,
@@ -120,6 +152,8 @@ export function useComponentCatalog(): UseComponentCatalogResult {
     sidebarVariants,
     footerVariants,
     dialogVariants,
+    tableVariants,
+    cardVariants,
     loading,
     error,
     refetch: fetchCatalog,

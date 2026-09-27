@@ -3,6 +3,9 @@ import Button from "../../../Core/button/Button";
 import Header from "../../../Core/header/Header";
 import Sidebar from "../../../Core/sidebar/Sidebar";
 import Footer from "../../../Core/footer/Footer";
+import Table from "../../../Core/table/Table";
+import CardGrid from "../../../Core/card/CardGrid";
+import EmptyCard from "../../../Core/card/EmptyCard";
 import {
   CanvasComponentInstance,
   ElementPosition,
@@ -165,8 +168,55 @@ export default function DraggableCanvasButton({
         </div>
       );
     }
+    if (button.componentType === "table") {
+      const tableWidth = button.width ? `${button.width}px` : "720px";
+      return (
+        <div style={{ width: tableWidth, maxWidth: "100%" }}>
+          <Table
+            columns={button.tableColumns}
+            rows={button.tableRows}
+            showFooter={button.tableShowFooter}
+            variant={button.variant}
+          />
+        </div>
+      );
+    }
+    if (button.componentType === "card") {
+      const isBase = button.isBaseCard || button.cardCount === 0;
+      if (isBase) {
+        const cardWidth = button.width ? `${button.width}px` : "880px";
+        return (
+          <div style={{ width: cardWidth, maxWidth: "100%" }}>
+            <EmptyCard
+              width={cardWidth}
+              height={button.cardHeight || button.height || 420}
+              corner={button.cardCorner}
+              variant={button.variant}
+              label={button.label}
+            />
+          </div>
+        );
+      }
+      const cardWidth = button.width ? `${button.width}px` : "820px";
+      return (
+        <div style={{ width: cardWidth, maxWidth: "100%" }}>
+          <CardGrid
+            count={button.cardCount ?? 3}
+            cards={button.cardItems}
+            gap={button.cardGap ?? "gap-6"}
+            corner={button.cardCorner ?? "xl"}
+            height={button.cardHeight ?? 240}
+            variant={button.variant}
+          />
+        </div>
+      );
+    }
     return <Button variant={button.variant}>{button.label}</Button>;
   }
+
+  const isBaseCard =
+    button.componentType === "card" &&
+    (button.isBaseCard || button.cardCount === 0);
 
   const containerStyle = isFullWidthComponent
     ? {
@@ -192,7 +242,11 @@ export default function DraggableCanvasButton({
           ? "cursor-pointer"
           : isLiveDragging
             ? "cursor-grabbing z-30"
-            : "cursor-grab z-10"
+            : isBaseCard
+              ? isSelected
+                ? "cursor-grab z-[2]"
+                : "cursor-grab z-0"
+              : "cursor-grab z-10"
       } ${
         !previewMode && isSelected
           ? "ring-2 ring-indigo-600 ring-offset-2 rounded-md"

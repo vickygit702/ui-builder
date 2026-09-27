@@ -12,6 +12,7 @@ import {
   createNewRoute,
   createNewComponentInstance,
   createNewSection,
+  moveCanvasButtonAcrossSections,
 } from "../utils/builderHelpers";
 
 export function useWebsiteBuilder() {
@@ -73,30 +74,12 @@ export function useWebsiteBuilder() {
             payload.buttonId &&
             payload.sourceSectionId
           ) {
-            let movedBtn: CanvasComponentInstance | undefined;
-            const updatedSections = route.sections.map((sec) => {
-              if (sec.id === payload.sourceSectionId) {
-                movedBtn = sec.buttons.find((b) => b.id === payload.buttonId);
-                return {
-                  ...sec,
-                  buttons: sec.buttons.filter((b) => b.id !== payload.buttonId),
-                };
-              }
-              return sec;
-            });
-
-            if (!movedBtn) return route;
-
-            const finalBtn: CanvasComponentInstance = payload.position
-              ? { ...movedBtn, position: payload.position }
-              : movedBtn;
-
             return {
               ...route,
-              sections: updatedSections.map((sec) =>
-                sec.id === targetSectionId
-                  ? { ...sec, buttons: [...sec.buttons, finalBtn] }
-                  : sec,
+              sections: moveCanvasButtonAcrossSections(
+                route.sections,
+                targetSectionId,
+                payload,
               ),
             };
           }
@@ -249,12 +232,56 @@ export function useWebsiteBuilder() {
     [activeRouteId],
   );
 
+  const handleExpandSectionHeight = useCallback(
+    (sectionId: string, additionalHeight: number = 400): void => {
+      setRoutes((prev) =>
+        prev.map((r) =>
+          r.id === activeRouteId
+            ? {
+                ...r,
+                sections: r.sections.map((s) =>
+                  s.id === sectionId
+                    ? {
+                        ...s,
+                        minHeight: (s.minHeight || 540) + additionalHeight,
+                      }
+                    : s,
+                ),
+              }
+            : r,
+        ),
+      );
+    },
+    [activeRouteId],
+  );
+
   const handleSetRoutes = useCallback((newRoutes: UserRoute[]): void => {
     setRoutes(newRoutes);
     if (newRoutes.length > 0) {
       setActiveRouteId(newRoutes[0].id);
       setActivePreviewPath(newRoutes[0].path);
     }
+  }, []);
+
+  const handleSetHomeRoute = useCallback((routeId: string): void => {
+    setRoutes((prev) => {
+      const target = prev.find((r) => r.id === routeId);
+      if (!target || target.path === "/") return prev;
+      return prev.map((r) => {
+        if (r.id === routeId) return { ...r, path: "/" };
+        if (r.path === "/") {
+          const safeSlug = `/${
+            r.name
+              .toLowerCase()
+              .trim()
+              .replace(/[^a-z0-9]+/g, "-") || "home"
+          }`;
+          return { ...r, path: safeSlug === "/" ? "/home" : safeSlug };
+        }
+        return r;
+      });
+    });
+    setActivePreviewPath("/");
   }, []);
 
   return {
@@ -271,6 +298,7 @@ export function useWebsiteBuilder() {
     handleSelectRoute,
     handleAddRoute,
     handleDeleteRoute,
+    handleSetHomeRoute,
     handleDropButton,
     handleMoveButton,
     handleRemoveButton,
@@ -281,6 +309,7 @@ export function useWebsiteBuilder() {
     setViewport,
     handleAddSection,
     handleDeleteSection,
+    handleExpandSectionHeight,
     handleSetRoutes,
   };
 }

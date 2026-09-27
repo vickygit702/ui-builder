@@ -15,6 +15,7 @@ interface RouteManagerProps {
   onSelectRoute: (routeId: string) => void;
   onAddRoute: (name: string, path: string) => void;
   onDeleteRoute: (routeId: string) => void;
+  onSetHomeRoute?: (routeId: string) => void;
 }
 
 export default function RouteManager({
@@ -23,6 +24,7 @@ export default function RouteManager({
   onSelectRoute,
   onAddRoute,
   onDeleteRoute,
+  onSetHomeRoute,
 }: RouteManagerProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
@@ -94,6 +96,11 @@ export default function RouteManager({
   function handleDeleteClick(e: MouseEvent, routeId: string) {
     e.stopPropagation();
     onDeleteRoute(routeId);
+  }
+
+  function handleSetHomeClick(e: MouseEvent, routeId: string) {
+    e.stopPropagation();
+    onSetHomeRoute?.(routeId);
   }
 
   if (isCollapsed) {
@@ -238,16 +245,35 @@ export default function RouteManager({
                 </div>
               </div>
 
-              {!isHome && (
-                <button
-                  type="button"
-                  title={`Delete ${route.name}`}
-                  onClick={(e) => handleDeleteClick(e, route.id)}
-                  className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-red-600 rounded transition-opacity"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              )}
+              <div className="flex items-center gap-1 shrink-0">
+                {isHome ? (
+                  <span className="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.5 rounded font-medium">
+                    Root (/)
+                  </span>
+                ) : (
+                  onSetHomeRoute && (
+                    <button
+                      type="button"
+                      title="Set as Root Home page (/)"
+                      onClick={(e) => handleSetHomeClick(e, route.id)}
+                      className="opacity-0 group-hover:opacity-100 px-1.5 py-0.5 text-[10px] text-indigo-600 hover:bg-indigo-50 border border-indigo-200 rounded transition-all font-medium"
+                    >
+                      Make /
+                    </button>
+                  )
+                )}
+
+                {!isHome && (
+                  <button
+                    type="button"
+                    title={`Delete ${route.name}`}
+                    onClick={(e) => handleDeleteClick(e, route.id)}
+                    className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-red-600 rounded transition-opacity"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
             </div>
           );
         })}

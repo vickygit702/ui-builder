@@ -11,6 +11,8 @@ import {
   CORE_SIDEBAR_TEMPLATE,
   CORE_FOOTER_TEMPLATE,
   CORE_DIALOG_TEMPLATE,
+  CORE_TABLE_TEMPLATE,
+  CORE_CARD_TEMPLATE,
 } from "./exportTemplates";
 
 export async function generateProjectZip(
@@ -57,6 +59,8 @@ export async function generateProjectZip(
     coreFolder.file("Sidebar.tsx", CORE_SIDEBAR_TEMPLATE);
     coreFolder.file("Footer.tsx", CORE_FOOTER_TEMPLATE);
     coreFolder.file("Dialog.tsx", CORE_DIALOG_TEMPLATE);
+    coreFolder.file("Table.tsx", CORE_TABLE_TEMPLATE);
+    coreFolder.file("Card.tsx", CORE_CARD_TEMPLATE);
   }
 
   // 4. Generate Page Components
@@ -102,11 +106,69 @@ export async function generateProjectZip(
     const dialogModals: string[] = [];
 
     const renderedComponents = contentComps.map((c) => {
+      const x = c.position?.x ?? 50;
+      const y = c.position?.y ?? 50;
+
+      if (c.componentType === "table") {
+        const width = c.props?.width ? `${c.props.width}px` : "720px";
+        const variant = (c.props?.variant as string) || "standard";
+        const showFooter = Boolean(c.props?.tableShowFooter);
+        const columnsJson = JSON.stringify(c.props?.tableColumns || []);
+        const rowsJson = JSON.stringify(c.props?.tableRows || []);
+        return `          <div style={{ position: 'absolute', left: '${x}px', top: '${y}px', width: '${width}', maxWidth: '100%', zIndex: 10 }}>
+            <Table
+              variant="${variant}"
+              showFooter={${showFooter}}
+              columns={${columnsJson}}
+              rows={${rowsJson}}
+            />
+          </div>`;
+      }
+
+      if (c.componentType === "card") {
+        const isBase = Boolean(c.props?.isBaseCard) || c.props?.cardCount === 0;
+        if (isBase) {
+          const width = c.props?.width ? `${c.props.width}px` : "880px";
+          const height =
+            (c.props?.cardHeight as number) ||
+            (c.props?.height as number) ||
+            420;
+          const corner = (c.props?.cardCorner as string) || "xl";
+          const variant = (c.props?.variant as string) || "standard";
+          const label = (c.props?.label as string) || "";
+          return `          <div style={{ position: 'absolute', left: '${x}px', top: '${y}px', width: '${width}', maxWidth: '100%', zIndex: 0 }}>
+            <EmptyCard
+              width="${width}"
+              height={${height}}
+              corner="${corner}"
+              variant="${variant}"
+              label="${label}"
+            />
+          </div>`;
+        }
+
+        const width = c.props?.width ? `${c.props.width}px` : "820px";
+        const count = (c.props?.cardCount as number) ?? 3;
+        const gap = (c.props?.cardGap as string) || "gap-6";
+        const corner = (c.props?.cardCorner as string) || "xl";
+        const height = (c.props?.cardHeight as number) ?? 240;
+        const variant = (c.props?.variant as string) || "standard";
+        const cardsJson = JSON.stringify(c.props?.cardItems || []);
+        return `          <div style={{ position: 'absolute', left: '${x}px', top: '${y}px', width: '${width}', maxWidth: '100%', zIndex: 10 }}>
+            <CardGrid
+              count={${count}}
+              variant="${variant}"
+              gap="${gap}"
+              corner="${corner}"
+              height={${height}}
+              cards={${cardsJson}}
+            />
+          </div>`;
+      }
+
       const label =
         (c.props?.label as string) || (c.props?.title as string) || "Button";
       const variant = (c.props?.variant as string) || "primary";
-      const x = c.position?.x ?? 50;
-      const y = c.position?.y ?? 50;
 
       let clickHandler = "";
       const actionType = c.props?.actionType;
@@ -137,27 +199,56 @@ export async function generateProjectZip(
         clickHandler = `onClick={() => alert('${actionTarget}')}`;
       }
 
-      return `          <div style={{ position: 'absolute', left: '${x}px', top: '${y}px' }}>
+      return `          <div style={{ position: 'absolute', left: '${x}px', top: '${y}px', zIndex: 10 }}>
             <Button variant="${variant}" ${clickHandler}>
               ${label}
             </Button>
           </div>`;
     });
 
+    const otherPages = project.pages.filter((p) => p.path !== page.path);
+    const otherPagesButtons =
+      otherPages.length > 0
+        ? `<p className="text-xs text-slate-400 mt-2">Available pages in this project:</p>
+            <div className="flex flex-wrap gap-2 mt-3 justify-center">
+              ${otherPages
+                .map(
+                  (p) =>
+                    `<Link to="${p.path}" className="px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-md text-xs font-medium hover:bg-indigo-100 transition-colors">Go to ${p.name} (${p.path}) &rarr;</Link>`,
+                )
+                .join("\n              ")}
+            </div>`
+        : `<p className="text-xs text-slate-300 mt-1">Add components to this page in the UI Builder.</p>`;
+
     const pageBody =
       renderedComponents.length > 0
         ? renderedComponents.join("\n")
         : `          <div className="flex flex-col items-center justify-center h-64 text-slate-400 text-sm">
-            <p>Canvas is empty.</p>
-            <p className="text-xs text-slate-300 mt-1">Add components to this page in the UI Builder.</p>
+            <p className="font-semibold text-slate-600 text-base">Canvas is empty for "${page.name}".</p>
+            ${otherPagesButtons}
           </div>`;
 
     const headerHeightStyle = headerComp?.props?.height
       ? ` style={{ height: '${headerComp.props.height}px' }}`
       : "";
+
+    const headerNavLinks =
+      project.pages.length > 1
+        ? `<nav className="flex items-center gap-4 text-sm font-medium">
+          ${project.pages
+            .map(
+              (p) =>
+                `<Link to="${p.path}" className="hover:text-indigo-600 transition-colors ${p.path === page.path ? "text-indigo-600 font-semibold" : "text-slate-600"}">${p.name}</Link>`,
+            )
+            .join("\n          ")}
+        </nav>`
+        : "";
+
     const headerTag = headerComp
-      ? `<Header title="${headerComp.props?.label || headerComp.props?.title || page.name}" variant="${headerComp.props?.variant || "standard"}"${headerHeightStyle} />`
-      : `<Header title="${page.name}" />`;
+      ? `<Header title="${headerComp.props?.label || headerComp.props?.title || page.name}" variant="${headerComp.props?.variant || "standard"}"${headerHeightStyle}>
+        ${headerNavLinks}
+      </Header>`
+      : "";
 
     const sidebarWidth = sidebarComp?.props?.width
       ? `${sidebarComp.props.width}px`
@@ -165,54 +256,134 @@ export async function generateProjectZip(
     const sidebarWidthStyle = sidebarWidth
       ? ` style={{ width: '${sidebarWidth}' }}`
       : "";
+
+    const sidebarNavLinks = project.pages
+      .map(
+        (p) =>
+          `<NavLink to="${p.path}" className={({ isActive }) => \`flex items-center px-3 py-2 rounded-lg text-xs font-medium transition-colors \${isActive ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}\`}>${p.name}</NavLink>`,
+      )
+      .join("\n              ");
+
     const sidebarTag = sidebarComp
       ? `<aside${sidebarWidthStyle} className="${sidebarWidth ? "" : "w-64 "}shrink-0 sticky top-0 self-stretch border-r border-slate-200 bg-white">
           <Sidebar title="${sidebarComp.props?.label || sidebarComp.props?.title || "Navigation"}" variant="${sidebarComp.props?.variant || "fixed"}">
-            <div className="text-xs text-slate-500 py-1 px-2">• Overview</div>
-            <div className="text-xs text-slate-500 py-1 px-2">• Analytics</div>
-            <div className="text-xs text-slate-500 py-1 px-2">• Settings</div>
+            <div className="space-y-1">
+              ${sidebarNavLinks}
+            </div>
           </Sidebar>
         </aside>`
-      : ``;
+      : "";
 
     const footerHeightStyle = footerComp?.props?.height
       ? ` style={{ minHeight: '${footerComp.props.height}px' }}`
       : "";
     const footerTag = footerComp
       ? `<Footer title="${footerComp.props?.label || footerComp.props?.title || `© 2026 ${project.name}. All rights reserved.`}" variant="${footerComp.props?.variant || "standard"}"${footerHeightStyle} />`
-      : `<Footer title="© 2026 ${project.name}. All rights reserved." />`;
+      : "";
 
-    const pageContent = `import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import Button from '../components/Core/Button';
-import Header from '../components/Core/Header';
-import Sidebar from '../components/Core/Sidebar';
-import Footer from '../components/Core/Footer';
-import Dialog from '../components/Core/Dialog';
+    const hasNavAction = contentComps.some(
+      (c) => c.props?.actionType === "navigate",
+    );
+    const hasDialog = dialogModals.length > 0;
 
-export default function ${componentName}() {
-  const navigate = useNavigate();
-  const [openDialogId, setOpenDialogId] = useState<string | null>(null);
+    const routerImports: string[] = [];
+    if (hasNavAction) routerImports.push("useNavigate");
+    const hasHeaderLinks = headerComp && project.pages.length > 1;
+    const hasEmptyPageLinks =
+      contentComps.length === 0 && otherPages.length > 0;
+    if (hasHeaderLinks || hasEmptyPageLinks) routerImports.push("Link");
+    if (sidebarComp && project.pages.length > 0) routerImports.push("NavLink");
 
+    const importLines: string[] = [];
+    if (hasDialog) {
+      importLines.push("import React, { useState } from 'react';");
+    } else {
+      importLines.push("import React from 'react';");
+    }
+
+    if (routerImports.length > 0) {
+      importLines.push(
+        `import { ${routerImports.join(", ")} } from 'react-router-dom';`,
+      );
+    }
+
+    const hasButtons = contentComps.some(
+      (c) => !c.componentType || c.componentType === "button",
+    );
+    const hasTables = contentComps.some((c) => c.componentType === "table");
+    const hasRegularCards = contentComps.some(
+      (c) =>
+        c.componentType === "card" &&
+        !(c.props?.isBaseCard || c.props?.cardCount === 0),
+    );
+    const hasBaseCards = contentComps.some(
+      (c) =>
+        c.componentType === "card" &&
+        (c.props?.isBaseCard || c.props?.cardCount === 0),
+    );
+
+    if (hasButtons) {
+      importLines.push("import Button from '../components/Core/Button';");
+    }
+    if (hasTables) {
+      importLines.push("import Table from '../components/Core/Table';");
+    }
+    if (hasRegularCards && hasBaseCards) {
+      importLines.push(
+        "import { CardGrid, EmptyCard } from '../components/Core/Card';",
+      );
+    } else if (hasRegularCards) {
+      importLines.push("import { CardGrid } from '../components/Core/Card';");
+    } else if (hasBaseCards) {
+      importLines.push("import { EmptyCard } from '../components/Core/Card';");
+    }
+    if (headerComp) {
+      importLines.push("import Header from '../components/Core/Header';");
+    }
+    if (sidebarComp) {
+      importLines.push("import Sidebar from '../components/Core/Sidebar';");
+    }
+    if (footerComp) {
+      importLines.push("import Footer from '../components/Core/Footer';");
+    }
+    if (hasDialog) {
+      importLines.push("import Dialog from '../components/Core/Dialog';");
+    }
+
+    const stateAndHooks: string[] = [];
+    if (hasNavAction) {
+      stateAndHooks.push("  const navigate = useNavigate();");
+    }
+    if (hasDialog) {
+      stateAndHooks.push(
+        "  const [openDialogId, setOpenDialogId] = useState<string | null>(null);",
+      );
+    }
+    const hooksBlock =
+      stateAndHooks.length > 0 ? `\n${stateAndHooks.join("\n")}\n` : "";
+
+    const headerElement = headerComp ? `      ${headerTag}\n` : "";
+    const sidebarElement = sidebarComp ? `        ${sidebarTag}\n` : "";
+    const footerElement = footerComp
+      ? `      <div className="mt-auto w-full shrink-0">
+        ${footerTag}
+      </div>\n`
+      : "";
+
+    const pageContent = `${importLines.join("\n")}
+
+export default function ${componentName}() {${hooksBlock}
   return (
     <div className="min-h-screen flex flex-col bg-slate-50">
-      ${headerTag}
-
-      <div className="flex-1 flex w-full relative min-h-[500px]">
-        ${sidebarTag}
-        <main className="flex-1 relative p-6 w-full min-h-[500px] overflow-auto">
+${headerElement}      <div className="flex-1 flex w-full relative min-h-[500px]">
+${sidebarElement}        <main className="flex-1 relative p-6 w-full min-h-[500px] overflow-auto">
           <div className="relative w-full h-full min-h-[480px] bg-white rounded-xl shadow-xs border border-slate-200 p-6">
   ${pageBody}
           </div>
         </main>
       </div>
 
-      <div className="mt-auto w-full shrink-0">
-        ${footerTag}
-      </div>
-
-${dialogModals.join("\n\n")}
-    </div>
+${footerElement}${dialogModals.length > 0 ? `\n${dialogModals.join("\n\n")}\n` : ""}    </div>
   );
 }
 `;
@@ -231,6 +402,7 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         ${routeElements.join("\n        ")}
+        <Route path="*" element={<Navigate to="${firstPagePath}" replace />} />
       </Routes>
     </BrowserRouter>
   );

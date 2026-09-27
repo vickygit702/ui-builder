@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useWebsiteBuilder } from "./hooks/useWebsiteBuilder";
 import { useComponentCatalog } from "./hooks/useComponentCatalog";
 import { useProjectPersistence } from "./hooks/useProjectPersistence";
@@ -19,6 +19,7 @@ export default function WebsiteBuilder() {
   const {
     routes,
     projectName,
+    setProjectName,
     activeRoute,
     activePreviewRoute,
     activeRouteId,
@@ -29,6 +30,7 @@ export default function WebsiteBuilder() {
     handleSelectRoute,
     handleAddRoute,
     handleDeleteRoute,
+    handleSetHomeRoute,
     handleDropButton,
     handleMoveButton,
     handleRemoveButton,
@@ -39,6 +41,8 @@ export default function WebsiteBuilder() {
     setViewport,
     handleAddSection,
     handleDeleteSection,
+    handleExpandSectionHeight,
+    handleSetRoutes,
   } = useWebsiteBuilder();
 
   const {
@@ -48,12 +52,31 @@ export default function WebsiteBuilder() {
     sidebarVariants,
     footerVariants,
     dialogVariants,
+    tableVariants,
+    cardVariants,
     loading: catalogLoading,
   } = useComponentCatalog();
 
   const { user, logout } = useAuth();
-  const { saveProjectToDb, downloadProjectZip, saving, saved, exporting } =
-    useProjectPersistence();
+  const {
+    saveProjectToDb,
+    exportProjectZip,
+    loadProjectFromDb,
+    saving,
+    saved,
+    exporting,
+  } = useProjectPersistence();
+
+  // Load saved project from DB on mount
+  useEffect(() => {
+    void (async () => {
+      const loaded = await loadProjectFromDb();
+      if (loaded && loaded.routes.length > 0) {
+        setProjectName(loaded.projectName);
+        handleSetRoutes(loaded.routes);
+      }
+    })();
+  }, [loadProjectFromDb, setProjectName, handleSetRoutes]);
 
   // Find selected component details for properties panel
   const selectedSection = selectedButtonRef
@@ -75,7 +98,7 @@ export default function WebsiteBuilder() {
   }
 
   function handleExport() {
-    void downloadProjectZip();
+    void exportProjectZip(projectName, routes);
   }
 
   function handleCloseDialog() {
@@ -112,6 +135,7 @@ export default function WebsiteBuilder() {
               onSelectRoute={handleSelectRoute}
               onAddRoute={handleAddRoute}
               onDeleteRoute={handleDeleteRoute}
+              onSetHomeRoute={handleSetHomeRoute}
             />
             <ComponentSidebar
               components={components}
@@ -120,6 +144,8 @@ export default function WebsiteBuilder() {
               sidebarVariants={sidebarVariants}
               footerVariants={footerVariants}
               dialogVariants={dialogVariants}
+              tableVariants={tableVariants}
+              cardVariants={cardVariants}
               loading={catalogLoading}
             />
           </>
@@ -136,7 +162,9 @@ export default function WebsiteBuilder() {
           onDropButton={handleDropButton}
           onMoveButton={handleMoveButton}
           onSelectButton={handleSelectButton}
+          onAddSection={handleAddSection}
           onDeleteSection={handleDeleteSection}
+          onExpandSectionHeight={handleExpandSectionHeight}
           onRemoveButton={handleRemoveButton}
           onPreviewNavigate={handlePreviewNavigate}
           onClosePreview={handleTogglePreview}
@@ -154,6 +182,8 @@ export default function WebsiteBuilder() {
             headerVariants={headerVariants}
             sidebarVariants={sidebarVariants}
             footerVariants={footerVariants}
+            tableVariants={tableVariants}
+            cardVariants={cardVariants}
             onUpdate={handleUpdateButton}
             onRemove={handleRemoveButton}
             onClose={handleCloseButtonProperties}

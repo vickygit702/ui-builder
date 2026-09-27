@@ -5,7 +5,33 @@ export type CoreComponentType =
   | "header"
   | "sidebar"
   | "footer"
-  | "dialog";
+  | "dialog"
+  | "table"
+  | "card";
+
+export type ColumnAlignment = "left" | "center" | "right";
+
+export interface TableColumnConfig {
+  id: string;
+  header: string;
+  headerAlign?: ColumnAlignment;
+  bodyAlign?: ColumnAlignment;
+  footerText?: string;
+}
+
+export interface TableRowConfig {
+  id: string;
+  cells: Record<string, string>;
+}
+
+export interface CardItemConfig {
+  id: string;
+  title: string;
+  subtitle?: string;
+  description?: string;
+  badge?: string;
+  actionLabel?: string;
+}
 
 export interface ElementPosition {
   x: number;
@@ -28,6 +54,17 @@ export interface CanvasComponentInstance {
   dialogContent?: string;
   dialogSize?: "compact" | "medium" | "large" | "full";
   dialogActionLabel?: string;
+  // Table-specific properties
+  tableColumns?: TableColumnConfig[];
+  tableRows?: TableRowConfig[];
+  tableShowFooter?: boolean;
+  // Card-specific properties
+  cardCount?: number;
+  cardGap?: string;
+  cardCorner?: string;
+  cardHeight?: number;
+  cardItems?: CardItemConfig[];
+  isBaseCard?: boolean;
   customProps?: Record<string, unknown>;
 }
 
@@ -75,6 +112,8 @@ export interface DraggedItemPayload {
   position?: ElementPosition;
   width?: number;
   height?: number;
+  cardCount?: number;
+  isBaseCard?: boolean;
 }
 
 export interface UserAuthData {

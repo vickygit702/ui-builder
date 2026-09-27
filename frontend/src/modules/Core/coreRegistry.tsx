@@ -5,6 +5,8 @@ import {
   PanelLeft,
   PanelBottom,
   AppWindow,
+  Table as TableIcon,
+  LayoutGrid,
   LucideIcon,
 } from "lucide-react";
 import Button from "./button/Button";
@@ -12,11 +14,15 @@ import Header from "./header/Header";
 import Sidebar from "./sidebar/Sidebar";
 import Footer from "./footer/Footer";
 import Dialog from "./dialog/Dialog";
+import Table from "./table/Table";
+import CardGrid from "./card/CardGrid";
 import { BUTTON_VARIANTS } from "./button/button.variants";
 import { HEADER_VARIANTS } from "./header/header.variants";
 import { SIDEBAR_VARIANTS } from "./sidebar/sidebar.variants";
 import { FOOTER_VARIANTS } from "./footer/footer.variants";
 import { DIALOG_VARIANTS } from "./dialog/dialog.variants";
+import { TABLE_VARIANTS } from "./table/table.variants";
+import { CARD_VARIANTS } from "./card/card.variants";
 
 export interface VariantDefinition {
   key: string;
@@ -131,6 +137,34 @@ export const CORE_COMPONENTS_REGISTRY: CoreComponentRegistryItem[] = [
             blocks, details, or forms here.
           </p>
         </Dialog>
+      </div>
+    ),
+  },
+  {
+    key: "table",
+    displayName: "Table",
+    description:
+      "Core data table with custom header columns, column-wise text alignments, and optional footer.",
+    category: "Element",
+    icon: TableIcon,
+    variants: TABLE_VARIANTS,
+    renderVariantPreview: (v) => (
+      <div className="w-full max-w-md">
+        <Table variant={v.key} showFooter={true} />
+      </div>
+    ),
+  },
+  {
+    key: "card",
+    displayName: "Card Grid",
+    description:
+      "Responsive card grid with basic shadow (md), configurable card count, gaps, corners, and heights.",
+    category: "Layout",
+    icon: LayoutGrid,
+    variants: CARD_VARIANTS,
+    renderVariantPreview: (v) => (
+      <div className="w-full max-w-md">
+        <CardGrid variant={v.key} count={2} gap="gap-3" height={160} />
       </div>
     ),
   },
