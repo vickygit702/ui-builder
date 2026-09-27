@@ -30,14 +30,28 @@ export function createNewRoute(name: string, rawPath: string): UserRoute {
 export function createNewComponentInstance(
   payload: DraggedItemPayload,
 ): CanvasComponentInstance {
+  const isDialog = payload.componentType === "dialog";
   return {
     id: `inst-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-    componentType: payload.componentType ?? "button",
+    componentType: isDialog ? "button" : (payload.componentType ?? "button"),
     coreComponentId: payload.coreComponentId,
     coreVariantId: payload.coreVariantId,
-    variant: payload.variantKey ?? "primary",
-    label: payload.label ? payload.label : "Component",
-    actionType: "none",
+    variant: isDialog ? "primary" : (payload.variantKey ?? "primary"),
+    label: isDialog
+      ? `Open ${payload.label || "Dialog"}`
+      : payload.label
+        ? payload.label
+        : "Component",
+    actionType: isDialog ? "dialog" : "none",
+    dialogTitle: isDialog
+      ? `${payload.label || "Feature"} Modal`
+      : "Feature Section Modal",
+    dialogSize:
+      (payload.variantKey as "compact" | "medium" | "large" | "full") ||
+      "medium",
+    dialogContent:
+      "This is the dialog content area. It opens full screen with blurred page background. You can dynamically insert feature blocks, details, or forms here.",
+    dialogActionLabel: "Confirm",
     position: payload.position ?? { x: 50, y: 50 },
   };
 }

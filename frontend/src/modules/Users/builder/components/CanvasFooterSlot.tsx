@@ -29,6 +29,10 @@ export default function CanvasFooterSlot({
     if (onRemove) onRemove(sectionId, component.id);
   }
 
+  const customHeightStyle = component.height
+    ? { minHeight: `${component.height}px` }
+    : undefined;
+
   return (
     <div
       onClick={handleSelect}
@@ -42,7 +46,11 @@ export default function CanvasFooterSlot({
             : ""
       }`}
     >
-      <Footer title={component.label} variant={component.variant}>
+      <Footer
+        title={component.label}
+        variant={component.variant}
+        style={customHeightStyle}
+      >
         <span className="text-xs opacity-75">Privacy Policy</span>
         <span className="text-xs opacity-75">Terms of Service</span>
         <span className="text-xs opacity-75">Contact Us</span>
@@ -51,7 +59,8 @@ export default function CanvasFooterSlot({
       {!previewMode && (
         <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 z-30">
           <span className="text-[10px] font-mono bg-slate-900/80 text-white px-2 py-0.5 rounded shadow-xs">
-            footer • {component.variant}
+            footer •{" "}
+            {component.height ? `${component.height}px` : component.variant}
           </span>
           {onRemove && (
             <button

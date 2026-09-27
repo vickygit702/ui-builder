@@ -4,16 +4,19 @@ import {
   PanelTop,
   PanelLeft,
   PanelBottom,
+  AppWindow,
   LucideIcon,
 } from "lucide-react";
 import Button from "./button/Button";
 import Header from "./header/Header";
 import Sidebar from "./sidebar/Sidebar";
 import Footer from "./footer/Footer";
+import Dialog from "./dialog/Dialog";
 import { BUTTON_VARIANTS } from "./button/button.variants";
 import { HEADER_VARIANTS } from "./header/header.variants";
 import { SIDEBAR_VARIANTS } from "./sidebar/sidebar.variants";
 import { FOOTER_VARIANTS } from "./footer/footer.variants";
+import { DIALOG_VARIANTS } from "./dialog/dialog.variants";
 
 export interface VariantDefinition {
   key: string;
@@ -104,6 +107,30 @@ export const CORE_COMPONENTS_REGISTRY: CoreComponentRegistryItem[] = [
             Support
           </span>
         </Footer>
+      </div>
+    ),
+  },
+  {
+    key: "dialog",
+    displayName: "Dialog",
+    description:
+      "Modal dialog with blurred page backdrop, dynamic content, and compact, medium, large, full sizes.",
+    category: "Layout",
+    icon: AppWindow,
+    variants: DIALOG_VARIANTS,
+    renderVariantPreview: (v) => (
+      <div className="w-full max-w-sm">
+        <Dialog
+          variant={v.key}
+          title="Sample Dialog"
+          description="Modal dialog preview with header, body, and actions."
+          isStaticPreview={true}
+        >
+          <p className="text-xs text-slate-600">
+            This is dynamic content inside the dialog. You can place feature
+            blocks, details, or forms here.
+          </p>
+        </Dialog>
       </div>
     ),
   },

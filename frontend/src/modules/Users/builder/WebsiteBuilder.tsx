@@ -8,9 +8,14 @@ import RouteManager from "./components/RouteManager";
 import ComponentSidebar from "./components/ComponentSidebar";
 import CanvasView from "./components/CanvasView";
 import ButtonPropertiesPanel from "./components/ButtonPropertiesPanel";
+import Dialog from "../../Core/dialog/Dialog";
+import { CanvasComponentInstance } from "../../types/builder.types";
 
 export default function WebsiteBuilder() {
   const [canvasWidth, setCanvasWidth] = useState<number>(0);
+  const [activeDialogButton, setActiveDialogButton] =
+    useState<CanvasComponentInstance | null>(null);
+
   const {
     routes,
     projectName,
@@ -42,6 +47,7 @@ export default function WebsiteBuilder() {
     headerVariants,
     sidebarVariants,
     footerVariants,
+    dialogVariants,
     loading: catalogLoading,
   } = useComponentCatalog();
 
@@ -70,6 +76,10 @@ export default function WebsiteBuilder() {
 
   function handleExport() {
     void downloadProjectZip();
+  }
+
+  function handleCloseDialog() {
+    setActiveDialogButton(null);
   }
 
   const displayedRoute = previewMode ? activePreviewRoute : activeRoute;
@@ -109,6 +119,7 @@ export default function WebsiteBuilder() {
               headerVariants={headerVariants}
               sidebarVariants={sidebarVariants}
               footerVariants={footerVariants}
+              dialogVariants={dialogVariants}
               loading={catalogLoading}
             />
           </>
@@ -127,10 +138,10 @@ export default function WebsiteBuilder() {
           onSelectButton={handleSelectButton}
           onDeleteSection={handleDeleteSection}
           onRemoveButton={handleRemoveButton}
-          onAddSection={handleAddSection}
           onPreviewNavigate={handlePreviewNavigate}
           onClosePreview={handleTogglePreview}
           onCanvasWidthChange={setCanvasWidth}
+          onOpenDialog={setActiveDialogButton}
         />
 
         {/* Right Properties Panel (Edit mode only, when button selected) */}
@@ -140,12 +151,51 @@ export default function WebsiteBuilder() {
             sectionId={selectedButtonRef.sectionId}
             routes={routes}
             variants={buttonVariants}
+            headerVariants={headerVariants}
+            sidebarVariants={sidebarVariants}
+            footerVariants={footerVariants}
             onUpdate={handleUpdateButton}
             onRemove={handleRemoveButton}
             onClose={handleCloseButtonProperties}
+            onPreviewDialog={setActiveDialogButton}
           />
         )}
       </div>
+
+      {/* Full Page Modal Dialog with Background Blur */}
+      {activeDialogButton && (
+        <Dialog
+          isOpen={true}
+          title={activeDialogButton.dialogTitle || "Feature Section Modal"}
+          variant={activeDialogButton.dialogSize || "medium"}
+          onClose={handleCloseDialog}
+          footer={
+            <>
+              <button
+                type="button"
+                onClick={handleCloseDialog}
+                className="px-3.5 py-1.5 rounded-md text-xs font-medium text-slate-700 bg-white hover:bg-slate-100 border border-slate-300 transition-colors"
+              >
+                Close
+              </button>
+              <button
+                type="button"
+                onClick={handleCloseDialog}
+                className="px-4 py-1.5 rounded-md text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-700 shadow-xs transition-colors"
+              >
+                {activeDialogButton.dialogActionLabel || "Confirm"}
+              </button>
+            </>
+          }
+        >
+          <div className="space-y-3">
+            <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+              {activeDialogButton.dialogContent ||
+                "This is the dialog content area. It opens full screen with blurred page background. You can dynamically insert feature blocks, details, or forms here."}
+            </p>
+          </div>
+        </Dialog>
+      )}
     </div>
   );
 }

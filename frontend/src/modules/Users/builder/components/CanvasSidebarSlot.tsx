@@ -29,12 +29,17 @@ export default function CanvasSidebarSlot({
     if (onRemove) onRemove(sectionId, component.id);
   }
 
+  const customWidthStyle = component.width
+    ? { width: `${component.width}px` }
+    : undefined;
+
   return (
     <aside
       onClick={handleSelect}
-      className={`w-60 shrink-0 sticky top-0 self-stretch border-r border-slate-200 bg-white z-10 transition-all group ${
-        previewMode ? "" : "cursor-pointer"
-      } ${
+      style={customWidthStyle}
+      className={`shrink-0 sticky top-0 self-stretch h-full z-10 transition-all group flex flex-col ${
+        component.width ? "" : "w-64"
+      } ${previewMode ? "" : "cursor-pointer"} ${
         !previewMode && isSelected
           ? "ring-2 ring-indigo-600 ring-offset-2"
           : !previewMode
@@ -43,13 +48,13 @@ export default function CanvasSidebarSlot({
       }`}
     >
       <Sidebar title={component.label} variant={component.variant}>
-        <div className="text-xs text-slate-500 py-1 px-2 rounded hover:bg-slate-50 select-none">
+        <div className="text-xs text-slate-500 py-1.5 px-2 rounded hover:bg-slate-100/60 select-none">
           • Dashboard
         </div>
-        <div className="text-xs text-slate-500 py-1 px-2 rounded hover:bg-slate-50 select-none">
+        <div className="text-xs text-slate-500 py-1.5 px-2 rounded hover:bg-slate-100/60 select-none">
           • Analytics
         </div>
-        <div className="text-xs text-slate-500 py-1 px-2 rounded hover:bg-slate-50 select-none">
+        <div className="text-xs text-slate-500 py-1.5 px-2 rounded hover:bg-slate-100/60 select-none">
           • Settings
         </div>
       </Sidebar>
@@ -57,7 +62,8 @@ export default function CanvasSidebarSlot({
       {!previewMode && (
         <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 z-30">
           <span className="text-[10px] font-mono bg-slate-900/80 text-white px-2 py-0.5 rounded shadow-xs">
-            sidebar
+            sidebar •{" "}
+            {component.width ? `${component.width}px` : component.variant}
           </span>
           {onRemove && (
             <button

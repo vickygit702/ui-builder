@@ -10,6 +10,7 @@ import {
   CORE_HEADER_TEMPLATE,
   CORE_SIDEBAR_TEMPLATE,
   CORE_FOOTER_TEMPLATE,
+  CORE_DIALOG_TEMPLATE,
 } from "./exportTemplates";
 
 export async function generateProjectZip(
@@ -55,6 +56,7 @@ export async function generateProjectZip(
     coreFolder.file("Header.tsx", CORE_HEADER_TEMPLATE);
     coreFolder.file("Sidebar.tsx", CORE_SIDEBAR_TEMPLATE);
     coreFolder.file("Footer.tsx", CORE_FOOTER_TEMPLATE);
+    coreFolder.file("Dialog.tsx", CORE_DIALOG_TEMPLATE);
   }
 
   // 4. Generate Page Components
@@ -97,6 +99,8 @@ export async function generateProjectZip(
         c.componentType !== "footer",
     );
 
+    const dialogModals: string[] = [];
+
     const renderedComponents = contentComps.map((c) => {
       const label =
         (c.props?.label as string) || (c.props?.title as string) || "Button";
@@ -107,7 +111,25 @@ export async function generateProjectZip(
       let clickHandler = "";
       const actionType = c.props?.actionType;
       const actionTarget = c.props?.actionTarget;
-      if (actionType === "navigate" && actionTarget) {
+      if (actionType === "dialog") {
+        clickHandler = `onClick={() => setOpenDialogId('${c.instanceKey}')}`;
+        const dlgTitle =
+          (c.props?.dialogTitle as string) || "Feature Details Modal";
+        const dlgSize = (c.props?.dialogSize as string) || "medium";
+        const dlgContent =
+          (c.props?.dialogContent as string) ||
+          "Dynamic modal content with full screen blurred backdrop.";
+        dialogModals.push(`      {openDialogId === '${c.instanceKey}' && (
+        <Dialog
+          isOpen={true}
+          title="${dlgTitle}"
+          variant="${dlgSize}"
+          onClose={() => setOpenDialogId(null)}
+        >
+          <p className="text-sm text-slate-700 whitespace-pre-wrap">${dlgContent}</p>
+        </Dialog>
+      )}`);
+      } else if (actionType === "navigate" && actionTarget) {
         clickHandler = `onClick={() => navigate('${actionTarget}')}`;
       } else if (actionType === "url" && actionTarget) {
         clickHandler = `onClick={() => window.open('${actionTarget}', '_blank')}`;
@@ -130,12 +152,21 @@ export async function generateProjectZip(
             <p className="text-xs text-slate-300 mt-1">Add components to this page in the UI Builder.</p>
           </div>`;
 
+    const headerHeightStyle = headerComp?.props?.height
+      ? ` style={{ height: '${headerComp.props.height}px' }}`
+      : "";
     const headerTag = headerComp
-      ? `<Header title="${headerComp.props?.label || headerComp.props?.title || page.name}" variant="${headerComp.props?.variant || "standard"}" />`
+      ? `<Header title="${headerComp.props?.label || headerComp.props?.title || page.name}" variant="${headerComp.props?.variant || "standard"}"${headerHeightStyle} />`
       : `<Header title="${page.name}" />`;
 
+    const sidebarWidth = sidebarComp?.props?.width
+      ? `${sidebarComp.props.width}px`
+      : null;
+    const sidebarWidthStyle = sidebarWidth
+      ? ` style={{ width: '${sidebarWidth}' }}`
+      : "";
     const sidebarTag = sidebarComp
-      ? `<aside className="w-60 shrink-0 sticky top-0 self-stretch border-r border-slate-200 bg-white">
+      ? `<aside${sidebarWidthStyle} className="${sidebarWidth ? "" : "w-64 "}shrink-0 sticky top-0 self-stretch border-r border-slate-200 bg-white">
           <Sidebar title="${sidebarComp.props?.label || sidebarComp.props?.title || "Navigation"}" variant="${sidebarComp.props?.variant || "fixed"}">
             <div className="text-xs text-slate-500 py-1 px-2">• Overview</div>
             <div className="text-xs text-slate-500 py-1 px-2">• Analytics</div>
@@ -144,19 +175,24 @@ export async function generateProjectZip(
         </aside>`
       : ``;
 
+    const footerHeightStyle = footerComp?.props?.height
+      ? ` style={{ minHeight: '${footerComp.props.height}px' }}`
+      : "";
     const footerTag = footerComp
-      ? `<Footer title="${footerComp.props?.label || footerComp.props?.title || `© 2026 ${project.name}. All rights reserved.`}" variant="${footerComp.props?.variant || "standard"}" />`
+      ? `<Footer title="${footerComp.props?.label || footerComp.props?.title || `© 2026 ${project.name}. All rights reserved.`}" variant="${footerComp.props?.variant || "standard"}"${footerHeightStyle} />`
       : `<Footer title="© 2026 ${project.name}. All rights reserved." />`;
 
-    const pageContent = `import React from 'react';
+    const pageContent = `import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Button from '../components/Core/Button';
 import Header from '../components/Core/Header';
 import Sidebar from '../components/Core/Sidebar';
 import Footer from '../components/Core/Footer';
+import Dialog from '../components/Core/Dialog';
 
 export default function ${componentName}() {
   const navigate = useNavigate();
+  const [openDialogId, setOpenDialogId] = useState<string | null>(null);
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50">
@@ -174,6 +210,8 @@ export default function ${componentName}() {
       <div className="mt-auto w-full shrink-0">
         ${footerTag}
       </div>
+
+${dialogModals.join("\n\n")}
     </div>
   );
 }

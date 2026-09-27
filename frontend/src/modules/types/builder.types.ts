@@ -1,6 +1,11 @@
-export type ButtonActionType = "navigate" | "url" | "alert" | "none";
+export type ButtonActionType = "navigate" | "url" | "alert" | "dialog" | "none";
 
-export type CoreComponentType = "button" | "header" | "sidebar" | "footer";
+export type CoreComponentType =
+  | "button"
+  | "header"
+  | "sidebar"
+  | "footer"
+  | "dialog";
 
 export interface ElementPosition {
   x: number;
@@ -17,6 +22,12 @@ export interface CanvasComponentInstance {
   actionType: ButtonActionType;
   actionTarget?: string;
   position?: ElementPosition;
+  width?: number;
+  height?: number;
+  dialogTitle?: string;
+  dialogContent?: string;
+  dialogSize?: "compact" | "medium" | "large" | "full";
+  dialogActionLabel?: string;
   customProps?: Record<string, unknown>;
 }
 
@@ -62,6 +73,8 @@ export interface DraggedItemPayload {
   offsetX?: number;
   offsetY?: number;
   position?: ElementPosition;
+  width?: number;
+  height?: number;
 }
 
 export interface UserAuthData {

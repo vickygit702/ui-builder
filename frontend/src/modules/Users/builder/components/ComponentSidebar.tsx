@@ -3,10 +3,10 @@ import {
   MousePointerClick,
   Layers,
   ChevronLeft,
-  ChevronRight,
   PanelTop,
   PanelLeft,
   PanelBottom,
+  AppWindow,
 } from "lucide-react";
 import Button from "../../../Core/button/Button";
 import Header from "../../../Core/header/Header";
@@ -16,6 +16,7 @@ import { ButtonVariantDef } from "../../../Core/button/button.variants";
 import { HeaderVariantDef } from "../../../Core/header/header.variants";
 import { SidebarVariantDef } from "../../../Core/sidebar/sidebar.variants";
 import { FooterVariantDef } from "../../../Core/footer/footer.variants";
+import { DialogVariantDef } from "../../../Core/dialog/dialog.variants";
 import {
   DraggedItemPayload,
   CoreComponentType,
@@ -23,6 +24,7 @@ import {
 import { ComponentResponse } from "../../../types/component.types";
 import ComponentCategoryAccordion from "./ComponentCategoryAccordion";
 import SidebarDraggableCard from "./SidebarDraggableCard";
+import ComponentSidebarRail from "./ComponentSidebarRail";
 
 interface ComponentSidebarProps {
   components: ComponentResponse[];
@@ -30,6 +32,7 @@ interface ComponentSidebarProps {
   headerVariants: HeaderVariantDef[];
   sidebarVariants: SidebarVariantDef[];
   footerVariants: FooterVariantDef[];
+  dialogVariants?: DialogVariantDef[];
   loading: boolean;
 }
 
@@ -39,6 +42,7 @@ export default function ComponentSidebar({
   headerVariants,
   sidebarVariants,
   footerVariants,
+  dialogVariants = [],
   loading,
 }: ComponentSidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -82,32 +86,7 @@ export default function ComponentSidebar({
   }
 
   if (isCollapsed) {
-    return (
-      <div className="w-12 bg-white border-r border-slate-200 flex flex-col items-center py-3 select-none shrink-0 transition-all">
-        <button
-          type="button"
-          onClick={handleToggleCollapse}
-          title="Expand Component Palette"
-          className="p-1.5 rounded-md text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors"
-        >
-          <ChevronRight className="w-4 h-4" />
-        </button>
-
-        <button
-          type="button"
-          onClick={handleToggleCollapse}
-          title="Expand Component Palette"
-          className="mt-4 flex flex-col items-center gap-2 group cursor-pointer"
-        >
-          <div className="p-1.5 rounded bg-indigo-50 text-indigo-600 group-hover:bg-indigo-100 transition-colors">
-            <Layers className="w-4 h-4" />
-          </div>
-          <span className="text-[10px] font-semibold text-slate-500 group-hover:text-indigo-600 [writing-mode:vertical-lr] rotate-180 uppercase tracking-widest mt-2">
-            Components
-          </span>
-        </button>
-      </div>
-    );
+    return <ComponentSidebarRail onExpand={handleToggleCollapse} />;
   }
 
   return (
@@ -277,6 +256,32 @@ export default function ComponentSidebar({
                 ))}
               </ComponentCategoryAccordion>
             )}
+
+            {/* 5. DIALOGS */}
+            {(tab === "all" || tab === "layout") &&
+              dialogVariants.length > 0 && (
+                <ComponentCategoryAccordion
+                  title="Dialogs / Modals"
+                  count={dialogVariants.length}
+                  icon={AppWindow}
+                >
+                  {dialogVariants.map((variant) => (
+                    <SidebarDraggableCard
+                      key={`dlg-${variant.key}`}
+                      componentType="dialog"
+                      variantKey={variant.key}
+                      label={`${variant.label} Dialog`}
+                      badgeText="dialog"
+                      onDragStart={handleDragStart}
+                    >
+                      <div className="flex items-center gap-1.5 py-1 px-2 bg-indigo-50/80 border border-indigo-200 text-indigo-700 rounded text-xs font-medium">
+                        <AppWindow className="w-3.5 h-3.5 text-indigo-600" />
+                        <span>{variant.label}</span>
+                      </div>
+                    </SidebarDraggableCard>
+                  ))}
+                </ComponentCategoryAccordion>
+              )}
           </>
         )}
       </div>

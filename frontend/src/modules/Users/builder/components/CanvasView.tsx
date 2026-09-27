@@ -1,11 +1,11 @@
-import { useRef, useState, useEffect } from "react";
-import { Plus, Monitor } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Monitor } from "lucide-react";
 import {
   UserRoute,
   ViewportMode,
   DraggedItemPayload,
   ElementPosition,
-  SectionType,
+  CanvasComponentInstance,
 } from "../../../types/builder.types";
 import CanvasSectionDropZone from "./CanvasSectionDropZone";
 import WebsitePreviewBar from "./WebsitePreviewBar";
@@ -26,10 +26,10 @@ interface CanvasViewProps {
   onSelectButton: (sectionId: string, buttonId: string) => void;
   onDeleteSection: (sectionId: string) => void;
   onRemoveButton?: (sectionId: string, buttonId: string) => void;
-  onAddSection: (type: SectionType) => void;
   onPreviewNavigate: (path: string) => void;
   onClosePreview: () => void;
   onCanvasWidthChange?: (width: number) => void;
+  onOpenDialog?: (button: CanvasComponentInstance) => void;
 }
 
 export default function CanvasView({
@@ -44,32 +44,34 @@ export default function CanvasView({
   onSelectButton,
   onDeleteSection,
   onRemoveButton,
-  onAddSection,
   onPreviewNavigate,
   onClosePreview,
   onCanvasWidthChange,
+  onOpenDialog,
 }: CanvasViewProps) {
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const [screenPixels, setScreenPixels] = useState<{
     width: number;
     height: number;
-  }>({
-    width: 0,
-    height: 0,
-  });
+  }>({ width: 0, height: 0 });
 
+  // Dynamically update pixel dimensions
   useEffect(() => {
     const el = canvasContainerRef.current;
     if (!el) return;
 
     function handleResize() {
-      if (!el) return;
-      const rect = el.getBoundingClientRect();
-      const w = Math.round(rect.width);
-      const h = Math.round(rect.height);
-      setScreenPixels({ width: w, height: h });
-      if (onCanvasWidthChange) {
-        onCanvasWidthChange(w);
+      if (el) {
+        const rect = el.getBoundingClientRect();
+        const roundedWidth = Math.round(rect.width);
+        const roundedHeight = Math.round(rect.height);
+        setScreenPixels({
+          width: roundedWidth,
+          height: roundedHeight,
+        });
+        if (onCanvasWidthChange) {
+          onCanvasWidthChange(roundedWidth);
+        }
       }
     }
 
@@ -88,20 +90,14 @@ export default function CanvasView({
     };
   }, [onCanvasWidthChange]);
 
-  function handleAddCtaSection() {
-    onAddSection("cta");
-  }
-
-  function handleAddFeaturesSection() {
-    onAddSection("features");
-  }
-
   const viewportClasses =
     viewport === "mobile"
       ? "max-w-sm my-6 rounded-2xl border-4 border-slate-800 shadow-2xl overflow-hidden"
       : viewport === "tablet"
         ? "max-w-2xl my-6 rounded-xl border border-slate-300 shadow-xl overflow-hidden"
         : "w-full min-h-full";
+
+  const mainSection = route.sections[0];
 
   return (
     <div className="flex-1 bg-slate-100 overflow-y-auto flex flex-col items-center">
@@ -149,10 +145,10 @@ export default function CanvasView({
         ref={canvasContainerRef}
         className={`transition-all duration-200 bg-white ${viewportClasses}`}
       >
-        {route.sections.map((section) => (
+        {mainSection && (
           <CanvasSectionDropZone
-            key={section.id}
-            section={section}
+            key={mainSection.id}
+            section={mainSection}
             previewMode={previewMode}
             selectedButtonId={selectedButtonId}
             onDropButton={onDropButton}
@@ -161,29 +157,8 @@ export default function CanvasView({
             onDeleteSection={onDeleteSection}
             onRemoveButton={onRemoveButton}
             onPreviewNavigate={onPreviewNavigate}
+            onOpenDialog={onOpenDialog}
           />
-        ))}
-
-        {!previewMode && (
-          <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-center gap-2">
-            <span className="text-xs text-slate-500 font-medium">
-              Add Section to Route:
-            </span>
-            <button
-              type="button"
-              onClick={handleAddCtaSection}
-              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded hover:bg-slate-50 shadow-sm"
-            >
-              <Plus className="w-3.5 h-3.5" /> Call to Action
-            </button>
-            <button
-              type="button"
-              onClick={handleAddFeaturesSection}
-              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded hover:bg-slate-50 shadow-sm"
-            >
-              <Plus className="w-3.5 h-3.5" /> Feature Block
-            </button>
-          </div>
         )}
       </div>
     </div>

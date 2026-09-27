@@ -1,10 +1,11 @@
-import { ReactNode } from "react";
+import { CSSProperties, ReactNode } from "react";
 import { HEADER_VARIANTS } from "./header.variants";
 
 interface HeaderProps {
   title?: string;
   variant?: string;
   className?: string;
+  style?: CSSProperties;
   children?: ReactNode;
 }
 
@@ -12,6 +13,7 @@ export default function Header({
   title = "My Website",
   variant = "standard",
   className = "",
+  style,
   children,
 }: HeaderProps) {
   const variantDef =
@@ -19,6 +21,7 @@ export default function Header({
 
   return (
     <header
+      style={style}
       className={`w-full py-3 px-6 flex items-center justify-between transition-colors shadow-sm ${variantDef.classNames} ${className}`}
     >
       <div className="font-bold text-lg tracking-tight select-none">

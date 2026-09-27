@@ -20,6 +20,7 @@ interface DraggableCanvasButtonProps {
     position: ElementPosition,
   ) => void;
   onPreviewNavigate: (path: string) => void;
+  onOpenDialog?: (button: CanvasComponentInstance) => void;
 }
 
 export default function DraggableCanvasButton({
@@ -30,6 +31,7 @@ export default function DraggableCanvasButton({
   onSelect,
   onMove,
   onPreviewNavigate,
+  onOpenDialog,
 }: DraggableCanvasButtonProps) {
   const [isLiveDragging, setIsLiveDragging] = useState(false);
   const [livePos, setLivePos] = useState<ElementPosition | null>(null);
@@ -119,6 +121,11 @@ export default function DraggableCanvasButton({
   }
 
   function handleButtonClick() {
+    if (button.actionType === "dialog") {
+      if (onOpenDialog) onOpenDialog(button);
+      return;
+    }
+
     if (!previewMode) return;
 
     if (button.actionType === "navigate" && button.actionTarget) {

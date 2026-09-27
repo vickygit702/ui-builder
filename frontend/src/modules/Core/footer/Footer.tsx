@@ -1,10 +1,11 @@
-import { ReactNode } from "react";
+import { CSSProperties, ReactNode } from "react";
 import { FOOTER_VARIANTS } from "./footer.variants";
 
 interface FooterProps {
   title?: string;
   variant?: string;
   className?: string;
+  style?: CSSProperties;
   children?: ReactNode;
 }
 
@@ -12,6 +13,7 @@ export default function Footer({
   title = "© 2026 My Website Inc. All rights reserved.",
   variant = "standard",
   className = "",
+  style,
   children,
 }: FooterProps) {
   const variantDef =
@@ -19,6 +21,7 @@ export default function Footer({
 
   return (
     <footer
+      style={style}
       className={`w-full transition-colors rounded-lg shadow-sm border ${variantDef.classNames} ${className}`}
     >
       <p className="text-xs mb-3 select-none">{title}</p>

@@ -4,6 +4,7 @@ import {
   CanvasSection,
   DraggedItemPayload,
   ElementPosition,
+  CanvasComponentInstance,
 } from "../../../types/builder.types";
 import DraggableCanvasButton from "./DraggableCanvasButton";
 import CanvasHeaderSlot from "./CanvasHeaderSlot";
@@ -24,6 +25,7 @@ interface CanvasSectionDropZoneProps {
   onDeleteSection?: (sectionId: string) => void;
   onRemoveButton?: (sectionId: string, buttonId: string) => void;
   onPreviewNavigate: (path: string) => void;
+  onOpenDialog?: (button: CanvasComponentInstance) => void;
 }
 
 export default function CanvasSectionDropZone({
@@ -35,6 +37,7 @@ export default function CanvasSectionDropZone({
   onSelectButton,
   onRemoveButton,
   onPreviewNavigate,
+  onOpenDialog,
 }: CanvasSectionDropZoneProps) {
   const [isOver, setIsOver] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -167,6 +170,7 @@ export default function CanvasSectionDropZone({
               onSelect={onSelectButton}
               onMove={onMoveButton}
               onPreviewNavigate={onPreviewNavigate}
+              onOpenDialog={onOpenDialog}
             />
           ))}
 

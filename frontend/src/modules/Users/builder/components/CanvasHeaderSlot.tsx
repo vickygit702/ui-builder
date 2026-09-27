@@ -29,6 +29,10 @@ export default function CanvasHeaderSlot({
     if (onRemove) onRemove(sectionId, component.id);
   }
 
+  const customHeightStyle = component.height
+    ? { height: `${component.height}px` }
+    : undefined;
+
   return (
     <header
       onClick={handleSelect}
@@ -42,12 +46,17 @@ export default function CanvasHeaderSlot({
             : ""
       }`}
     >
-      <Header title={component.label} variant={component.variant} />
+      <Header
+        title={component.label}
+        variant={component.variant}
+        style={customHeightStyle}
+      />
 
       {!previewMode && (
         <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 z-30">
           <span className="text-[10px] font-mono bg-slate-900/80 text-white px-2 py-0.5 rounded shadow-xs">
-            header • {component.variant}
+            header •{" "}
+            {component.height ? `${component.height}px` : component.variant}
           </span>
           {onRemove && (
             <button

@@ -17,6 +17,10 @@ import {
   FOOTER_VARIANTS,
   FooterVariantDef,
 } from "../../../Core/footer/footer.variants";
+import {
+  DIALOG_VARIANTS,
+  DialogVariantDef,
+} from "../../../Core/dialog/dialog.variants";
 
 interface UseComponentCatalogResult {
   components: ComponentResponse[];
@@ -24,6 +28,7 @@ interface UseComponentCatalogResult {
   headerVariants: HeaderVariantDef[];
   sidebarVariants: SidebarVariantDef[];
   footerVariants: FooterVariantDef[];
+  dialogVariants: DialogVariantDef[];
   loading: boolean;
   error: string | null;
   refetch: () => Promise<void>;
@@ -97,12 +102,24 @@ export function useComponentCatalog(): UseComponentCatalogResult {
         }))
       : FOOTER_VARIANTS;
 
+  const dialogComp = components.find((c) => c.key === "dialog");
+  const dialogVariants: DialogVariantDef[] =
+    dialogComp && dialogComp.variants.length > 0
+      ? dialogComp.variants.map((v) => ({
+          key: v.variantKey,
+          label: v.label,
+          classNames: v.classNames,
+          isDefault: v.isDefault,
+        }))
+      : DIALOG_VARIANTS;
+
   return {
     components,
     buttonVariants,
     headerVariants,
     sidebarVariants,
     footerVariants,
+    dialogVariants,
     loading,
     error,
     refetch: fetchCatalog,
