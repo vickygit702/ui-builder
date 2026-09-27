@@ -6,9 +6,8 @@ export function createEmptyCanvasSection(): CanvasSection[] {
       id: "sec-canvas-main",
       name: "Main Canvas",
       type: "canvas",
-      title: "Blank Canvas",
-      subtitle:
-        "Drag and drop components (Header, Sidebar, Buttons, Footer) from the library onto this canvas.",
+      title: "",
+      subtitle: "",
       buttons: [],
       minHeight: 480,
     },

@@ -1,5 +1,12 @@
-import { useState, ChangeEvent, FormEvent } from "react";
-import { Plus, Trash2, Globe, Layers } from "lucide-react";
+import { useState, ChangeEvent, FormEvent, MouseEvent } from "react";
+import {
+  Plus,
+  Trash2,
+  Globe,
+  Layers,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { UserRoute } from "../../../types/builder.types";
 
 interface RouteManagerProps {
@@ -17,10 +24,15 @@ export default function RouteManager({
   onAddRoute,
   onDeleteRoute,
 }: RouteManagerProps) {
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [routeName, setRouteName] = useState("");
   const [routePath, setRoutePath] = useState("");
   const [error, setError] = useState<string | null>(null);
+
+  function handleToggleCollapse() {
+    setIsCollapsed((prev) => !prev);
+  }
 
   function handleOpenAddForm() {
     setIsAdding(true);
@@ -79,21 +91,68 @@ export default function RouteManager({
     setError(null);
   }
 
+  function handleDeleteClick(e: MouseEvent, routeId: string) {
+    e.stopPropagation();
+    onDeleteRoute(routeId);
+  }
+
+  if (isCollapsed) {
+    return (
+      <div className="w-12 bg-slate-50 border-r border-slate-200 flex flex-col items-center py-3 select-none shrink-0 transition-all">
+        <button
+          type="button"
+          onClick={handleToggleCollapse}
+          title="Expand User Routes"
+          className="p-1.5 rounded-md text-slate-500 hover:text-slate-900 hover:bg-slate-200 transition-colors"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
+
+        <button
+          type="button"
+          onClick={handleToggleCollapse}
+          title="Expand User Routes"
+          className="mt-4 flex flex-col items-center gap-2 group cursor-pointer"
+        >
+          <div className="p-1.5 rounded bg-indigo-50 text-indigo-600 group-hover:bg-indigo-100 transition-colors">
+            <Globe className="w-4 h-4" />
+          </div>
+          <span className="text-[10px] font-semibold text-slate-500 group-hover:text-indigo-600 [writing-mode:vertical-lr] rotate-180 uppercase tracking-widest mt-2">
+            Routes ({routes.length})
+          </span>
+        </button>
+      </div>
+    );
+  }
+
   return (
-    <div className="w-64 bg-slate-50 border-r border-slate-200 flex flex-col shrink-0 select-none">
+    <div className="w-64 bg-slate-50 border-r border-slate-200 flex flex-col shrink-0 select-none transition-all">
       <div className="p-3 border-b border-slate-200 flex items-center justify-between">
         <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 uppercase tracking-wider">
           <Globe className="w-3.5 h-3.5 text-indigo-600" />
           User Routes
+          <span className="text-[10px] font-normal text-slate-400">
+            ({routes.length})
+          </span>
         </div>
-        <button
-          type="button"
-          onClick={handleOpenAddForm}
-          className="p-1 rounded text-slate-600 hover:text-slate-900 hover:bg-slate-200 transition-colors"
-          title="Add New Route"
-        >
-          <Plus className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={handleOpenAddForm}
+            className="p-1 rounded text-slate-600 hover:text-slate-900 hover:bg-slate-200 transition-colors"
+            title="Add New Route"
+          >
+            <Plus className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={handleToggleCollapse}
+            className="p-1 rounded text-slate-500 hover:text-slate-900 hover:bg-slate-200 transition-colors"
+            title="Collapse User Routes"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       {isAdding && (
@@ -183,10 +242,7 @@ export default function RouteManager({
                 <button
                   type="button"
                   title={`Delete ${route.name}`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDeleteRoute(route.id);
-                  }}
+                  onClick={(e) => handleDeleteClick(e, route.id)}
                   className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-red-600 rounded transition-opacity"
                 >
                   <Trash2 className="w-3.5 h-3.5" />

@@ -13,6 +13,7 @@ export default function AppRoutes() {
         <Route path="/" element={<Navigate to="/users/builder" replace />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/core/button" element={<ButtonPlayground />} />
+        <Route path="/core" element={<Navigate to="/core/button" replace />} />
         <Route
           path="/users/builder"
           element={

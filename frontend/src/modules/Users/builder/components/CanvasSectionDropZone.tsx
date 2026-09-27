@@ -76,6 +76,7 @@ export default function CanvasSectionDropZone({
     }
   }
 
+  const isCanvas = section.type === "canvas";
   const isNav = section.type === "navbar";
   const isHero = section.type === "hero";
   const isFooter = section.type === "footer";
@@ -100,7 +101,9 @@ export default function CanvasSectionDropZone({
             ? "pt-10 pb-6 px-8 bg-gradient-to-b from-indigo-50/50 to-white text-center"
             : isFooter
               ? "pt-8 pb-6 px-6 bg-slate-900 text-slate-400 text-center"
-              : "pt-8 pb-6 px-8 bg-white border-b border-slate-100 text-center"
+              : isCanvas
+                ? "p-6 bg-white border-b border-slate-100"
+                : "pt-8 pb-6 px-8 bg-white border-b border-slate-100 text-center"
       } ${
         !previewMode && isOver
           ? "ring-2 ring-indigo-500 ring-offset-1 bg-indigo-50/30"
@@ -128,33 +131,35 @@ export default function CanvasSectionDropZone({
         </div>
       )}
 
-      {/* Static text header */}
-      {isNav ? (
-        <div className="flex items-center justify-between max-w-5xl mx-auto mb-2">
-          <span className="text-lg font-bold text-slate-900 tracking-tight">
-            {section.title}
-          </span>
-        </div>
-      ) : (
-        <div className="max-w-2xl mx-auto pointer-events-none mb-4">
-          {section.title && (
-            <h3
-              className={`text-2xl md:text-3xl font-extrabold tracking-tight mb-2 ${
-                isFooter
-                  ? "text-slate-300 text-sm font-normal"
-                  : "text-slate-900"
-              }`}
-            >
+      {/* Static text header (hidden on plain canvas sections) */}
+      {!isCanvas &&
+        (section.title || section.subtitle) &&
+        (isNav ? (
+          <div className="flex items-center justify-between max-w-5xl mx-auto mb-2">
+            <span className="text-lg font-bold text-slate-900 tracking-tight">
               {section.title}
-            </h3>
-          )}
-          {section.subtitle && (
-            <p className="text-xs md:text-sm text-slate-600 max-w-xl mx-auto">
-              {section.subtitle}
-            </p>
-          )}
-        </div>
-      )}
+            </span>
+          </div>
+        ) : (
+          <div className="max-w-2xl mx-auto pointer-events-none mb-4">
+            {section.title && (
+              <h3
+                className={`text-2xl md:text-3xl font-extrabold tracking-tight mb-2 ${
+                  isFooter
+                    ? "text-slate-300 text-sm font-normal"
+                    : "text-slate-900"
+                }`}
+              >
+                {section.title}
+              </h3>
+            )}
+            {section.subtitle && (
+              <p className="text-xs md:text-sm text-slate-600 max-w-xl mx-auto">
+                {section.subtitle}
+              </p>
+            )}
+          </div>
+        ))}
 
       {/* Freeform Pixel Canvas Stage */}
       <div
