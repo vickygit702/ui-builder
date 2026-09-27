@@ -64,6 +64,9 @@ export default function DraggableCanvasButton({
       hasMoved: false,
     };
 
+    const isFullWidth =
+      button.componentType === "header" || button.componentType === "footer";
+
     function onPointerMove(moveEvent: PointerEvent) {
       if (!dragStartRef.current) return;
       const deltaX = moveEvent.clientX - dragStartRef.current.startX;
@@ -75,10 +78,9 @@ export default function DraggableCanvasButton({
       }
 
       if (dragStartRef.current.hasMoved) {
-        const nextX = Math.max(
-          0,
-          Math.round(dragStartRef.current.initialX + deltaX),
-        );
+        const nextX = isFullWidth
+          ? 0
+          : Math.max(0, Math.round(dragStartRef.current.initialX + deltaX));
         const nextY = Math.max(
           0,
           Math.round(dragStartRef.current.initialY + deltaY),
@@ -94,10 +96,9 @@ export default function DraggableCanvasButton({
       if (dragStartRef.current?.hasMoved) {
         const deltaX = upEvent.clientX - dragStartRef.current.startX;
         const deltaY = upEvent.clientY - dragStartRef.current.startY;
-        const finalX = Math.max(
-          0,
-          Math.round(dragStartRef.current.initialX + deltaX),
-        );
+        const finalX = isFullWidth
+          ? 0
+          : Math.max(0, Math.round(dragStartRef.current.initialX + deltaX));
         const finalY = Math.max(
           0,
           Math.round(dragStartRef.current.initialY + deltaY),
@@ -129,10 +130,13 @@ export default function DraggableCanvasButton({
     }
   }
 
+  const isFullWidthComponent =
+    button.componentType === "header" || button.componentType === "footer";
+
   function renderComponentContent() {
     if (button.componentType === "header") {
       return (
-        <div className="w-[720px] max-w-full">
+        <div className="w-full">
           <Header title={button.label} variant={button.variant} />
         </div>
       );
@@ -149,7 +153,7 @@ export default function DraggableCanvasButton({
     }
     if (button.componentType === "footer") {
       return (
-        <div className="w-[720px] max-w-full">
+        <div className="w-full">
           <Footer title={button.label} variant={button.variant} />
         </div>
       );
@@ -157,11 +161,19 @@ export default function DraggableCanvasButton({
     return <Button variant={button.variant}>{button.label}</Button>;
   }
 
-  const containerStyle = {
-    position: "absolute" as const,
-    left: `${posX}px`,
-    top: `${posY}px`,
-  };
+  const containerStyle = isFullWidthComponent
+    ? {
+        position: "absolute" as const,
+        left: 0,
+        right: 0,
+        top: `${posY}px`,
+        width: "100%",
+      }
+    : {
+        position: "absolute" as const,
+        left: `${posX}px`,
+        top: `${posY}px`,
+      };
 
   return (
     <div
@@ -184,7 +196,10 @@ export default function DraggableCanvasButton({
     >
       {!previewMode && (isSelected || isLiveDragging) && (
         <div className="absolute -top-7 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-slate-900 text-white text-[10px] font-mono rounded shadow pointer-events-none whitespace-nowrap z-40">
-          [{button.componentType || "button"}] X: {posX}px, Y: {posY}px
+          [{button.componentType || "button"}]{" "}
+          {isFullWidthComponent
+            ? `Y: ${posY}px (Full Width)`
+            : `X: ${posX}px, Y: ${posY}px`}
         </div>
       )}
 

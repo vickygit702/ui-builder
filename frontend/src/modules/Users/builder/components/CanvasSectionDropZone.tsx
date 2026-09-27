@@ -54,9 +54,14 @@ export default function CanvasSectionDropZone({
     try {
       const payload = JSON.parse(data) as DraggedItemPayload;
       const rect = containerRef.current?.getBoundingClientRect();
-      const dropX = rect
-        ? Math.max(16, Math.round(e.clientX - rect.left - 45))
-        : 50;
+      const isFullWidth =
+        payload.componentType === "header" ||
+        payload.componentType === "footer";
+      const dropX = isFullWidth
+        ? 0
+        : rect
+          ? Math.max(16, Math.round(e.clientX - rect.left - 45))
+          : 50;
       const dropY = rect
         ? Math.max(16, Math.round(e.clientY - rect.top - 18))
         : 50;
@@ -94,7 +99,7 @@ export default function CanvasSectionDropZone({
       onDragOver={!previewMode ? handleDragOver : undefined}
       onDragLeave={!previewMode ? handleDragLeave : undefined}
       onDrop={!previewMode ? handleDrop : undefined}
-      className={`relative transition-all select-none ${
+      className={`relative transition-all select-none w-full ${
         isNav
           ? "py-4 px-6 bg-white border-b border-slate-200"
           : isHero
@@ -102,7 +107,7 @@ export default function CanvasSectionDropZone({
             : isFooter
               ? "pt-8 pb-6 px-6 bg-slate-900 text-slate-400 text-center"
               : isCanvas
-                ? "p-6 bg-white border-b border-slate-100"
+                ? "p-4 md:p-6 bg-white border-b border-slate-100"
                 : "pt-8 pb-6 px-8 bg-white border-b border-slate-100 text-center"
       } ${
         !previewMode && isOver
@@ -112,8 +117,8 @@ export default function CanvasSectionDropZone({
             : ""
       }`}
     >
-      {/* Section Header Controls */}
-      {!previewMode && (
+      {/* Section Header Controls (hidden on canvas sections to provide plain full-width area) */}
+      {!previewMode && !isCanvas && (
         <div className="absolute top-2 right-2 flex items-center gap-1.5 opacity-60 hover:opacity-100 transition-opacity z-20">
           <span className="text-[10px] font-mono uppercase bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200">
             {section.type} • pixel canvas
@@ -135,13 +140,13 @@ export default function CanvasSectionDropZone({
       {!isCanvas &&
         (section.title || section.subtitle) &&
         (isNav ? (
-          <div className="flex items-center justify-between max-w-5xl mx-auto mb-2">
+          <div className="flex items-center justify-between w-full mb-2">
             <span className="text-lg font-bold text-slate-900 tracking-tight">
               {section.title}
             </span>
           </div>
         ) : (
-          <div className="max-w-2xl mx-auto pointer-events-none mb-4">
+          <div className="w-full pointer-events-none mb-4">
             {section.title && (
               <h3
                 className={`text-2xl md:text-3xl font-extrabold tracking-tight mb-2 ${
@@ -161,13 +166,13 @@ export default function CanvasSectionDropZone({
           </div>
         ))}
 
-      {/* Freeform Pixel Canvas Stage */}
+      {/* Freeform Pixel Canvas Stage - Takes 100% full width */}
       <div
         style={{ minHeight: `${contentHeight}px` }}
-        className={`relative w-full max-w-5xl mx-auto rounded-lg transition-all ${
+        className={`relative w-full rounded-lg transition-all ${
           !previewMode
-            ? "bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:20px_20px] border border-dashed border-slate-200/80"
-            : ""
+            ? "bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:20px_20px] border border-dashed border-slate-200/80 min-h-[480px]"
+            : "min-h-[480px]"
         }`}
       >
         {section.buttons.map((btn) => (

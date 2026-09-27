@@ -19,6 +19,7 @@ interface BuilderHeaderProps {
   currentRoutePath: string;
   previewMode: boolean;
   viewport: ViewportMode;
+  canvasWidth?: number;
   userEmail?: string;
   saving?: boolean;
   saved?: boolean;
@@ -34,6 +35,7 @@ export default function BuilderHeader({
   currentRoutePath,
   previewMode,
   viewport,
+  canvasWidth,
   userEmail,
   saving,
   saved,
@@ -81,21 +83,26 @@ export default function BuilderHeader({
       <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg">
         <button
           type="button"
-          title="Desktop view"
+          title="Desktop view (Active focus - auto-updating pixels)"
           onClick={handleSelectDesktop}
-          className={`p-1.5 rounded text-xs flex items-center gap-1 transition-colors ${
+          className={`p-1.5 rounded text-xs flex items-center gap-1.5 transition-colors ${
             viewport === "desktop"
               ? "bg-white text-slate-900 shadow-sm font-medium"
               : "text-slate-500 hover:text-slate-800"
           }`}
         >
-          <Monitor className="w-4 h-4" />
-          <span className="hidden sm:inline">Desktop</span>
+          <Monitor className="w-4 h-4 text-indigo-600" />
+          <span>Desktop</span>
+          {canvasWidth && canvasWidth > 0 ? (
+            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-indigo-50 text-indigo-700 font-semibold border border-indigo-100">
+              {canvasWidth}px
+            </span>
+          ) : null}
         </button>
 
         <button
           type="button"
-          title="Tablet view"
+          title="Tablet view (Future responsive focus)"
           onClick={handleSelectTablet}
           className={`p-1.5 rounded text-xs flex items-center gap-1 transition-colors ${
             viewport === "tablet"
@@ -105,11 +112,14 @@ export default function BuilderHeader({
         >
           <Tablet className="w-4 h-4" />
           <span className="hidden sm:inline">Tablet</span>
+          <span className="text-[9px] text-slate-400 font-normal">
+            (future)
+          </span>
         </button>
 
         <button
           type="button"
-          title="Mobile view"
+          title="Mobile view (Future responsive focus)"
           onClick={handleSelectMobile}
           className={`p-1.5 rounded text-xs flex items-center gap-1 transition-colors ${
             viewport === "mobile"
@@ -119,6 +129,9 @@ export default function BuilderHeader({
         >
           <Smartphone className="w-4 h-4" />
           <span className="hidden sm:inline">Mobile</span>
+          <span className="text-[9px] text-slate-400 font-normal">
+            (future)
+          </span>
         </button>
       </div>
 

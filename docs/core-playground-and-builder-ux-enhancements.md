@@ -14,9 +14,12 @@
   - Made `RouteManager` collapsible with smooth expand/collapse chevron toggles and a compact `w-12` vertical rail with page count indicator.
   - Made `ComponentSidebar` panel collapsible with expand/collapse chevron toggles and compact `w-12` rail.
   - Added `ComponentCategoryAccordion.tsx` allowing users to collapse/expand individual component categories (Buttons, Headers, Sidebars, Footers) inside the component palette.
-- **Plain Area Canvas Surface**:
-  - Removed "Blank Canvas" static title and subtitle headers from `CanvasSectionDropZone.tsx` when rendering the canvas stage.
-  - Updated `createEmptyCanvasSection` in `initialRoutes.ts` and `handleAddRoute` in `useWebsiteBuilder.ts` to initialize routes with plain empty titles, creating an unobstructed canvas.
+- **Full-Width Canvas & Auto-Updating Desktop Pixels (`/users/builder`)**:
+  - Removed `max-w-5xl` (1024px) constraint from `CanvasSectionDropZone.tsx` and `CanvasView.tsx`; canvas stage now expands to **100% full width** of the desktop screen.
+  - Removed `{section.type} • pixel canvas` header badge overlay and controls from canvas sections, creating a clean, unobstructed, edge-to-edge drop surface.
+  - Implemented dynamic desktop canvas pixel tracking using `ResizeObserver` in `CanvasView.tsx` with live screen dimensions (`{width}px × {height}px`) that auto-update whenever sidebars are collapsed/expanded or the browser window is resized.
+  - Connected live `canvasWidth` to `BuilderHeader.tsx`, showing the active pixel resolution directly on the Desktop viewport switcher (`Desktop • {width}px`) while annotating Tablet and Mobile as future targets (`(future)`).
+  - Updated `DraggableCanvasButton.tsx` so Header and Footer components automatically span 100% full width (`left: 0, right: 0, width: 100%`) across the canvas with vertical Y-axis drag positioning.
 
 ## Where it lives
 

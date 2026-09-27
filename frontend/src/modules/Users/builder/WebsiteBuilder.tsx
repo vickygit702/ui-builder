@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useWebsiteBuilder } from "./hooks/useWebsiteBuilder";
 import { useComponentCatalog } from "./hooks/useComponentCatalog";
 import { useProjectPersistence } from "./hooks/useProjectPersistence";
@@ -9,6 +10,7 @@ import CanvasView from "./components/CanvasView";
 import ButtonPropertiesPanel from "./components/ButtonPropertiesPanel";
 
 export default function WebsiteBuilder() {
+  const [canvasWidth, setCanvasWidth] = useState<number>(0);
   const {
     routes,
     projectName,
@@ -78,6 +80,7 @@ export default function WebsiteBuilder() {
         currentRoutePath={displayedRoute.path}
         previewMode={previewMode}
         viewport={viewport}
+        canvasWidth={canvasWidth}
         userEmail={user?.email}
         saving={saving}
         saved={saved}
@@ -126,6 +129,7 @@ export default function WebsiteBuilder() {
           onAddSection={handleAddSection}
           onPreviewNavigate={handlePreviewNavigate}
           onClosePreview={handleTogglePreview}
+          onCanvasWidthChange={setCanvasWidth}
         />
 
         {/* Right Properties Panel (Edit mode only, when button selected) */}
