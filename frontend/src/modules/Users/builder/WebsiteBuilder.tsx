@@ -126,6 +126,7 @@ export default function WebsiteBuilder() {
           onMoveButton={handleMoveButton}
           onSelectButton={handleSelectButton}
           onDeleteSection={handleDeleteSection}
+          onRemoveButton={handleRemoveButton}
           onAddSection={handleAddSection}
           onPreviewNavigate={handlePreviewNavigate}
           onClosePreview={handleTogglePreview}

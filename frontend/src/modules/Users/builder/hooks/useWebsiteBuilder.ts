@@ -1,7 +1,6 @@
 import { useState, useCallback, useMemo } from "react";
 import {
   UserRoute,
-  CanvasSection,
   CanvasComponentInstance,
   SectionType,
   ViewportMode,
@@ -9,6 +8,11 @@ import {
   ElementPosition,
 } from "../../../types/builder.types";
 import { INITIAL_USER_ROUTES } from "../utils/initialRoutes";
+import {
+  createNewRoute,
+  createNewComponentInstance,
+  createNewSection,
+} from "../utils/builderHelpers";
 
 export function useWebsiteBuilder() {
   const [routes, setRoutes] = useState<UserRoute[]>(INITIAL_USER_ROUTES);
@@ -41,28 +45,10 @@ export function useWebsiteBuilder() {
   );
 
   const handleAddRoute = useCallback((name: string, rawPath: string): void => {
-    const formattedPath = rawPath.startsWith("/") ? rawPath : `/${rawPath}`;
-    const newId = `route-${Date.now()}`;
-    const newRoute: UserRoute = {
-      id: newId,
-      name,
-      path: formattedPath,
-      sections: [
-        {
-          id: `sec-canvas-${Date.now()}`,
-          name: "Main Canvas",
-          type: "canvas",
-          title: "",
-          subtitle: "",
-          buttons: [],
-          minHeight: 480,
-        },
-      ],
-    };
-
+    const newRoute = createNewRoute(name, rawPath);
     setRoutes((prev) => [...prev, newRoute]);
-    setActiveRouteId(newId);
-    setActivePreviewPath(formattedPath);
+    setActiveRouteId(newRoute.id);
+    setActivePreviewPath(newRoute.path);
   }, []);
 
   const handleDeleteRoute = useCallback((routeId: string): void => {
@@ -115,24 +101,26 @@ export function useWebsiteBuilder() {
             };
           }
 
-          const newButton: CanvasComponentInstance = {
-            id: `inst-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-            componentType: payload.componentType ?? "button",
-            coreComponentId: payload.coreComponentId,
-            coreVariantId: payload.coreVariantId,
-            variant: payload.variantKey ?? "primary",
-            label: payload.label ? payload.label : "Component",
-            actionType: "none",
-            position: payload.position ?? { x: 50, y: 50 },
-          };
+          const newButton = createNewComponentInstance(payload);
+          const isStructural =
+            payload.componentType === "header" ||
+            payload.componentType === "sidebar" ||
+            payload.componentType === "footer";
 
           return {
             ...route,
-            sections: route.sections.map((sec) =>
-              sec.id === targetSectionId
-                ? { ...sec, buttons: [...sec.buttons, newButton] }
-                : sec,
-            ),
+            sections: route.sections.map((sec) => {
+              if (sec.id !== targetSectionId) return sec;
+              const filteredButtons = isStructural
+                ? sec.buttons.filter(
+                    (b) => b.componentType !== payload.componentType,
+                  )
+                : sec.buttons;
+              return {
+                ...sec,
+                buttons: [...filteredButtons, newButton],
+              };
+            }),
           };
         }),
       );
@@ -236,15 +224,7 @@ export function useWebsiteBuilder() {
 
   const handleAddSection = useCallback(
     (type: SectionType): void => {
-      const newSection: CanvasSection = {
-        id: `sec-${Date.now()}`,
-        name: `${type.toUpperCase()} Section`,
-        type,
-        title: type === "cta" ? "Call to Action" : "Content Area",
-        subtitle: "Drag components here for pixel-perfect placement.",
-        buttons: [],
-        minHeight: 280,
-      };
+      const newSection = createNewSection(type);
       setRoutes((prev) =>
         prev.map((r) =>
           r.id === activeRouteId

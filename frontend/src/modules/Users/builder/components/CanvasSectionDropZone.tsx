@@ -1,11 +1,14 @@
 import { useState, useRef, DragEvent } from "react";
-import { PlusCircle, Trash2 } from "lucide-react";
+import { PlusCircle } from "lucide-react";
 import {
   CanvasSection,
   DraggedItemPayload,
   ElementPosition,
 } from "../../../types/builder.types";
 import DraggableCanvasButton from "./DraggableCanvasButton";
+import CanvasHeaderSlot from "./CanvasHeaderSlot";
+import CanvasSidebarSlot from "./CanvasSidebarSlot";
+import CanvasFooterSlot from "./CanvasFooterSlot";
 
 interface CanvasSectionDropZoneProps {
   section: CanvasSection;
@@ -19,6 +22,7 @@ interface CanvasSectionDropZoneProps {
   ) => void;
   onSelectButton: (sectionId: string, buttonId: string) => void;
   onDeleteSection?: (sectionId: string) => void;
+  onRemoveButton?: (sectionId: string, buttonId: string) => void;
   onPreviewNavigate: (path: string) => void;
 }
 
@@ -29,11 +33,28 @@ export default function CanvasSectionDropZone({
   onDropButton,
   onMoveButton,
   onSelectButton,
-  onDeleteSection,
+  onRemoveButton,
   onPreviewNavigate,
 }: CanvasSectionDropZoneProps) {
   const [isOver, setIsOver] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const contentStageRef = useRef<HTMLDivElement>(null);
+
+  const headerComponent = section.buttons.find(
+    (b) => b.componentType === "header",
+  );
+  const sidebarComponent = section.buttons.find(
+    (b) => b.componentType === "sidebar",
+  );
+  const footerComponent = section.buttons.find(
+    (b) => b.componentType === "footer",
+  );
+  const contentComponents = section.buttons.filter(
+    (b) =>
+      b.componentType !== "header" &&
+      b.componentType !== "sidebar" &&
+      b.componentType !== "footer",
+  );
 
   function handleDragOver(e: DragEvent<HTMLDivElement>) {
     e.preventDefault();
@@ -53,15 +74,23 @@ export default function CanvasSectionDropZone({
 
     try {
       const payload = JSON.parse(data) as DraggedItemPayload;
-      const rect = containerRef.current?.getBoundingClientRect();
-      const isFullWidth =
-        payload.componentType === "header" ||
-        payload.componentType === "footer";
-      const dropX = isFullWidth
-        ? 0
-        : rect
-          ? Math.max(16, Math.round(e.clientX - rect.left - 45))
-          : 50;
+      const isHeader = payload.componentType === "header";
+      const isSidebar = payload.componentType === "sidebar";
+      const isFooter = payload.componentType === "footer";
+
+      if (isHeader || isSidebar || isFooter) {
+        onDropButton(section.id, {
+          ...payload,
+          position: { x: 0, y: 0 },
+        });
+        return;
+      }
+
+      // Calculate position relative to the content stage
+      const rect = contentStageRef.current?.getBoundingClientRect();
+      const dropX = rect
+        ? Math.max(16, Math.round(e.clientX - rect.left - 45))
+        : 50;
       const dropY = rect
         ? Math.max(16, Math.round(e.clientY - rect.top - 18))
         : 50;
@@ -75,22 +104,11 @@ export default function CanvasSectionDropZone({
     }
   }
 
-  function handleDelete() {
-    if (onDeleteSection) {
-      onDeleteSection(section.id);
-    }
-  }
-
-  const isCanvas = section.type === "canvas";
-  const isNav = section.type === "navbar";
-  const isHero = section.type === "hero";
-  const isFooter = section.type === "footer";
-
-  // Calculate dynamic canvas surface height so placed buttons are never cropped
-  const defaultHeight = isNav ? 70 : isFooter ? 110 : 220;
-  const contentHeight = section.buttons.reduce(
-    (max, b) => Math.max(max, (b.position?.y ?? 0) + 70),
-    defaultHeight,
+  // Dynamic content height so buttons are never cropped and footer moves down
+  const minContentHeight = 520;
+  const contentHeight = contentComponents.reduce(
+    (max, b) => Math.max(max, (b.position?.y ?? 0) + 80),
+    minContentHeight,
   );
 
   return (
@@ -99,105 +117,85 @@ export default function CanvasSectionDropZone({
       onDragOver={!previewMode ? handleDragOver : undefined}
       onDragLeave={!previewMode ? handleDragLeave : undefined}
       onDrop={!previewMode ? handleDrop : undefined}
-      className={`relative transition-all select-none w-full ${
-        isNav
-          ? "py-4 px-6 bg-white border-b border-slate-200"
-          : isHero
-            ? "pt-10 pb-6 px-8 bg-gradient-to-b from-indigo-50/50 to-white text-center"
-            : isFooter
-              ? "pt-8 pb-6 px-6 bg-slate-900 text-slate-400 text-center"
-              : isCanvas
-                ? "p-4 md:p-6 bg-white border-b border-slate-100"
-                : "pt-8 pb-6 px-8 bg-white border-b border-slate-100 text-center"
-      } ${
-        !previewMode && isOver
-          ? "ring-2 ring-indigo-500 ring-offset-1 bg-indigo-50/30"
-          : !previewMode
-            ? "hover:ring-1 hover:ring-slate-300"
-            : ""
+      className={`relative transition-all select-none w-full min-h-[calc(100vh-140px)] flex flex-col justify-between bg-white ${
+        !previewMode && isOver ? "ring-2 ring-indigo-500 ring-offset-1" : ""
       }`}
     >
-      {/* Section Header Controls (hidden on canvas sections to provide plain full-width area) */}
-      {!previewMode && !isCanvas && (
-        <div className="absolute top-2 right-2 flex items-center gap-1.5 opacity-60 hover:opacity-100 transition-opacity z-20">
-          <span className="text-[10px] font-mono uppercase bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200">
-            {section.type} • pixel canvas
-          </span>
-          {!isNav && !isFooter && onDeleteSection && (
-            <button
-              type="button"
-              onClick={handleDelete}
-              title="Delete Section"
-              className="p-1 text-slate-400 hover:text-red-600 rounded"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
-          )}
-        </div>
+      {/* 1. TOP HEADER (Takes natural height, full width) */}
+      {headerComponent && (
+        <CanvasHeaderSlot
+          component={headerComponent}
+          sectionId={section.id}
+          previewMode={previewMode}
+          isSelected={selectedButtonId === headerComponent.id}
+          onSelect={onSelectButton}
+          onRemove={onRemoveButton}
+        />
       )}
 
-      {/* Static text header (hidden on plain canvas sections) */}
-      {!isCanvas &&
-        (section.title || section.subtitle) &&
-        (isNav ? (
-          <div className="flex items-center justify-between w-full mb-2">
-            <span className="text-lg font-bold text-slate-900 tracking-tight">
-              {section.title}
-            </span>
-          </div>
-        ) : (
-          <div className="w-full pointer-events-none mb-4">
-            {section.title && (
-              <h3
-                className={`text-2xl md:text-3xl font-extrabold tracking-tight mb-2 ${
-                  isFooter
-                    ? "text-slate-300 text-sm font-normal"
-                    : "text-slate-900"
-                }`}
-              >
-                {section.title}
-              </h3>
-            )}
-            {section.subtitle && (
-              <p className="text-xs md:text-sm text-slate-600 max-w-xl mx-auto">
-                {section.subtitle}
-              </p>
-            )}
-          </div>
-        ))}
-
-      {/* Freeform Pixel Canvas Stage - Takes 100% full width */}
-      <div
-        style={{ minHeight: `${contentHeight}px` }}
-        className={`relative w-full rounded-lg transition-all ${
-          !previewMode
-            ? "bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:20px_20px] border border-dashed border-slate-200/80 min-h-[480px]"
-            : "min-h-[480px]"
-        }`}
-      >
-        {section.buttons.map((btn) => (
-          <DraggableCanvasButton
-            key={btn.id}
-            button={btn}
+      {/* 2. BODY AREA: Contains Sidebar (left) and Content Canvas (right) */}
+      <div className="flex-1 flex w-full relative min-h-[500px]">
+        {/* SIDEBAR: Fixed for full height when scrolling, does not move */}
+        {sidebarComponent && (
+          <CanvasSidebarSlot
+            component={sidebarComponent}
             sectionId={section.id}
             previewMode={previewMode}
-            isSelected={selectedButtonId === btn.id}
+            isSelected={selectedButtonId === sidebarComponent.id}
             onSelect={onSelectButton}
-            onMove={onMoveButton}
-            onPreviewNavigate={onPreviewNavigate}
+            onRemove={onRemoveButton}
           />
-        ))}
-
-        {!previewMode && section.buttons.length === 0 && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400 text-xs pointer-events-none">
-            <PlusCircle className="w-5 h-5 mb-1 text-slate-300" />
-            <span>
-              Drop buttons anywhere on this canvas grid for pixel-perfect
-              placement
-            </span>
-          </div>
         )}
+
+        {/* CONTENT CANVAS AREA: Takes remaining width, full height, scrolls */}
+        <div
+          ref={contentStageRef}
+          style={{ minHeight: `${contentHeight}px` }}
+          className={`flex-1 relative transition-all ${
+            !previewMode
+              ? "bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:20px_20px]"
+              : ""
+          }`}
+        >
+          {contentComponents.map((btn) => (
+            <DraggableCanvasButton
+              key={btn.id}
+              button={btn}
+              sectionId={section.id}
+              previewMode={previewMode}
+              isSelected={selectedButtonId === btn.id}
+              onSelect={onSelectButton}
+              onMove={onMoveButton}
+              onPreviewNavigate={onPreviewNavigate}
+            />
+          ))}
+
+          {!previewMode && contentComponents.length === 0 && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400 text-xs pointer-events-none p-8">
+              <PlusCircle className="w-6 h-6 mb-2 text-slate-300" />
+              <span className="font-semibold text-slate-600 text-sm">
+                Spacious Content Canvas Area
+              </span>
+              <span className="text-[11px] text-slate-400 mt-1 text-center max-w-sm">
+                Drop buttons and feature blocks here. Expands dynamically as you
+                add items.
+              </span>
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* 3. FOOTER: Pushed to bottom of page (mt-auto), never overlaps content! */}
+      {footerComponent && (
+        <CanvasFooterSlot
+          component={footerComponent}
+          sectionId={section.id}
+          previewMode={previewMode}
+          isSelected={selectedButtonId === footerComponent.id}
+          onSelect={onSelectButton}
+          onRemove={onRemoveButton}
+        />
+      )}
     </section>
   );
 }

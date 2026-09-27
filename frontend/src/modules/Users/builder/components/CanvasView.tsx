@@ -25,6 +25,7 @@ interface CanvasViewProps {
   ) => void;
   onSelectButton: (sectionId: string, buttonId: string) => void;
   onDeleteSection: (sectionId: string) => void;
+  onRemoveButton?: (sectionId: string, buttonId: string) => void;
   onAddSection: (type: SectionType) => void;
   onPreviewNavigate: (path: string) => void;
   onClosePreview: () => void;
@@ -42,6 +43,7 @@ export default function CanvasView({
   onMoveButton,
   onSelectButton,
   onDeleteSection,
+  onRemoveButton,
   onAddSection,
   onPreviewNavigate,
   onClosePreview,
@@ -157,6 +159,7 @@ export default function CanvasView({
             onMoveButton={onMoveButton}
             onSelectButton={onSelectButton}
             onDeleteSection={onDeleteSection}
+            onRemoveButton={onRemoveButton}
             onPreviewNavigate={onPreviewNavigate}
           />
         ))}
